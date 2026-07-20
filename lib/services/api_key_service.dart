@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Uses SharedPreferences for persistent local storage.
 class ApiKeyService {
   static const String _apiKeyPref = 'gemini_api_key';
-  static const String _defaultApiKey = 'AIzaSyAY7YigBJAl8CpdG0-MKSc44H-TQMmCgKw';
+  static const String _defaultApiKey = '';
   static ApiKeyService? _instance;
   String? _cachedKey;
 
