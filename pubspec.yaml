@@ -1,0 +1,32 @@
+name: nutri_snap
+description: "YOTRACKEZ - Snap. Analyze. Eat Smart."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+  google_fonts: ^6.2.1
+  percent_indicator: ^4.2.3
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.2
+  shared_preferences: ^2.3.4
+  image: ^4.3.0
+  http: ^1.2.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/model/food_labels.txt
+    - assets/data/nutrition_db.json
