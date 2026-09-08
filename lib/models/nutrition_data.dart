@@ -19,6 +19,13 @@ class NutrientInfo {
       dailyPercent: (json['daily_percent'] as num?)?.toDouble(),
     );
   }
+
+  NutrientInfo scale(double factor) => NutrientInfo(
+        name: name,
+        amount: amount * factor,
+        unit: unit,
+        dailyPercent: dailyPercent == null ? null : dailyPercent! * factor,
+      );
 }
 
 /// Nutritional data for a single ingredient within a dish.
@@ -54,6 +61,16 @@ class IngredientData {
   }
 
   double get totalMacroGrams => carbs + protein + fat;
+
+  IngredientData scale(double factor) => IngredientData(
+        name: name,
+        amount: amount,
+        calories: calories * factor,
+        carbs: carbs * factor,
+        protein: protein * factor,
+        fat: fat * factor,
+        fiber: fiber * factor,
+      );
 }
 
 class NutritionData {
@@ -70,6 +87,8 @@ class NutritionData {
   final List<NutrientInfo> vitamins;
   final List<IngredientData> ingredients;
   final String healthTip;
+  final String foodCategory;
+  final String portionConfidence;
 
   const NutritionData({
     required this.foodName,
@@ -85,6 +104,8 @@ class NutritionData {
     required this.vitamins,
     required this.ingredients,
     required this.healthTip,
+    this.foodCategory = 'mixed',
+    this.portionConfidence = 'medium',
   });
 
   /// Whether this food has an ingredient breakdown.
@@ -129,8 +150,51 @@ class NutritionData {
               .toList() ??
           [],
       healthTip: json['health_tip'] as String? ?? '',
+      foodCategory: json['food_category'] as String? ?? 'mixed',
+      portionConfidence: json['portion_confidence'] as String? ?? 'medium',
     );
   }
+
+  /// Scales every nutritional value for a user-confirmed portion adjustment.
+  /// The original serving description is preserved so callers can label the
+  /// chosen multiplier clearly instead of guessing a new volume or weight.
+  NutritionData scale(double factor) => NutritionData(
+        foodName: foodName,
+        servingSize: servingSize,
+        calories: calories * factor,
+        carbs: carbs.scale(factor),
+        protein: protein.scale(factor),
+        fat: fat.scale(factor),
+        fiber: fiber.scale(factor),
+        sugar: sugar.scale(factor),
+        sodium: sodium.scale(factor),
+        cholesterol: cholesterol.scale(factor),
+        vitamins: vitamins.map((v) => v.scale(factor)).toList(),
+        ingredients: ingredients.map((i) => i.scale(factor)).toList(),
+        healthTip: healthTip,
+        foodCategory: foodCategory,
+        portionConfidence: portionConfidence,
+      );
+
+  /// Keeps vision-derived meal details while replacing its estimated nutrient
+  /// values with a matched nutrition-database serving.
+  NutritionData withNutritionFrom(NutritionData source) => NutritionData(
+        foodName: foodName,
+        servingSize: servingSize,
+        calories: source.calories,
+        carbs: source.carbs,
+        protein: source.protein,
+        fat: source.fat,
+        fiber: source.fiber,
+        sugar: source.sugar,
+        sodium: source.sodium,
+        cholesterol: source.cholesterol,
+        vitamins: source.vitamins,
+        ingredients: ingredients,
+        healthTip: healthTip,
+        foodCategory: foodCategory,
+        portionConfidence: portionConfidence,
+      );
 
   double get totalMacroGrams => carbs.amount + protein.amount + fat.amount;
 

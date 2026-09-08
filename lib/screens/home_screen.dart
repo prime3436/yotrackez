@@ -2,13 +2,27 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import '../models/nutrition_data.dart';
 import '../services/api_key_service.dart';
+import '../services/calorie_body_service.dart';
 import '../services/gemini_food_service.dart';
 import '../services/nutrition_db_service.dart';
+import '../services/nutrition_lookup_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/image_source_sheet.dart';
+import '../widgets/cyber_blade_wings_logo.dart';
+import '../widgets/food_scan_overlay.dart';
+import '../services/streak_service.dart';
+import '../services/water_service.dart';
+import '../widgets/water_tracker_widget.dart';
 import 'food_search_screen.dart';
+import 'health_insights_screen.dart';
+import 'profile_screen.dart';
 import 'result_screen.dart';
+import 'barcode_scanner_screen.dart';
+
+
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +34,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _analyzing = false;
+  Uint8List? _analyzingImageBytes;
 
   @override
   void initState() {
@@ -29,16 +44,20 @@ class _HomeScreenState extends State<HomeScreen> {
     ApiKeyService.instance.load().then((_) {
       if (mounted) setState(() {});
     });
+    // Run calorie engine once per day — drives the Rive avatar bodyComposition
+    CalorieBodyService.instance.loadCached().then((_) {
+      CalorieBodyService.instance.runIfNeeded();
+    });
+    // Load water + streak trackers
+    WaterService.instance.load();
+    StreakService.instance.load();
   }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
+      // Pick the image at full quality — ImagePreprocessor will resize
+      // and normalise it before sending to the AI (avoids double-compression).
+      final XFile? image = await _picker.pickImage(source: source);
       if (image != null && mounted) {
         final bytes = await image.readAsBytes();
 
@@ -46,8 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (GeminiFoodService.instance.isAvailable) {
           await _analyzeWithGemini(bytes);
         } else {
-          // Fallback to manual food search
-          _navigateToFoodSearch(bytes);
+          _promptApiKeyOrFallback(bytes);
         }
       }
     } catch (e) {
@@ -62,33 +80,59 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Analyze food image using Gemini Vision API.
-  Future<void> _analyzeWithGemini(Uint8List imageBytes) async {
-    setState(() => _analyzing = true);
-
-    // Show analyzing message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
+  void _promptApiKeyOrFallback(Uint8List imageBytes) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: AppTheme.cardRadius),
+        title: Row(
           children: [
-            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-            SizedBox(width: 12),
-            Text('Asking Gemini AI to identify your food...'),
+            Icon(Icons.auto_awesome_rounded, color: AppTheme.primary, size: 24),
+            const SizedBox(width: 12),
+            const Text('Gemini AI Key Required'),
           ],
         ),
-        backgroundColor: AppTheme.primary,
-        duration: const Duration(seconds: 15),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Text(
+          'To use instant AI food recognition, enter your free Gemini API key (get it at aistudio.google.com). Or continue with manual food search.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _navigateToFoodSearch(imageBytes);
+            },
+            child: const Text('Use Search'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showApiKeyDialog();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: AppTheme.background,
+            ),
+            child: const Text('Enter Key'),
+          ),
+        ],
       ),
     );
+  }
+
+  /// Analyze food image using Gemini Vision API.
+  Future<void> _analyzeWithGemini(Uint8List imageBytes) async {
+    setState(() {
+      _analyzing = true;
+      _analyzingImageBytes = imageBytes;
+    });
 
     try {
       final result = await GeminiFoodService.instance.analyzeFood(imageBytes);
 
       if (!mounted) return;
       setState(() => _analyzing = false);
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       if (result == null || GeminiFoodService.isNotFood(result)) {
         // Gemini couldn't identify — fall back to manual search
@@ -105,14 +149,18 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      // Go directly to result screen with Gemini's analysis
+      final nutrition = await _enrichVisionNutrition(result);
+      if (!mounted) return;
+
+      // Go directly to the review screen with Gemini's detection and a
+      // database-backed nutrient profile whenever both servings use grams.
       Navigator.push(
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
           pageBuilder: (context, animation, _) => ResultScreen(
             imageBytes: imageBytes,
-            nutritionData: result,
+            nutritionData: nutrition,
           ),
           transitionsBuilder: (context, animation, _, child) {
             return FadeTransition(
@@ -134,19 +182,61 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _analyzing = false);
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gemini AI error: $e'),
-            backgroundColor: AppTheme.error,
-            duration: const Duration(seconds: 6),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        _navigateToFoodSearch(imageBytes);
+
+        final isInvalidKey = e.toString().contains('API key invalid') || e.toString().contains('403');
+        if (isInvalidKey) {
+          await ApiKeyService.instance.clearApiKey();
+          if (!mounted) return;
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Gemini API error. Please check backend proxy or connection.'),
+              backgroundColor: AppTheme.error,
+              duration: const Duration(seconds: 5),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gemini AI error: $e'),
+              backgroundColor: AppTheme.error,
+              duration: const Duration(seconds: 6),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
+          _navigateToFoodSearch(imageBytes);
+        }
       }
     }
+  }
+
+  /// Cross-check a detected food against the local/Open Food Facts/USDA chain.
+  /// A replacement is only used when both servings state a gram weight, so a
+  /// "slice" or "cup" is never silently treated as an equivalent portion.
+  Future<NutritionData> _enrichVisionNutrition(NutritionData vision) async {
+    try {
+      await NutritionDbService.instance.load();
+      final database = await NutritionLookupService.instance.lookup(vision.foodName);
+      final detectedGrams = _gramsInServing(vision.servingSize);
+      final databaseGrams = database == null ? null : _gramsInServing(database.servingSize);
+
+      if (database != null && detectedGrams != null && databaseGrams != null) {
+        final factor = detectedGrams / databaseGrams;
+        return vision.withNutritionFrom(database.scale(factor));
+      }
+    } catch (_) {
+      // Vision nutrition remains a safe fallback if a network source is down.
+    }
+    return vision;
+  }
+
+  double? _gramsInServing(String serving) {
+    final match = RegExp(r'(\d+(?:\.\d+)?)\s*g\b', caseSensitive: false)
+        .firstMatch(serving);
+    return match == null ? null : double.tryParse(match.group(1)!);
   }
 
   /// Show dialog to enter/update Gemini API key.
@@ -293,6 +383,53 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigateToInsights() {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, animation, _) => const HealthInsightsScreen(),
+        transitionsBuilder: (context, animation, _, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.1),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _navigateToBarcodeScan() async {
+    final result = await Navigator.push<NutritionData>(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (context, animation, _) => const BarcodeScannerScreen(),
+        transitionsBuilder: (context, animation, _, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+
+    if (!mounted || result == null) return;
+
+    // Feed directly into ResultScreen — same flow as AI photo scan
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ResultScreen(nutritionData: result)),
+    );
+  }
+
+
   void _showImageSourceSheet() {
     showModalBottomSheet(
       context: context,
@@ -338,168 +475,170 @@ class _HomeScreenState extends State<HomeScreen> {
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    // Top bar with settings
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        // AI status badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: GeminiFoodService.instance.isAvailable
-                                ? AppTheme.fiberGreen.withValues(alpha: 0.1)
-                                : AppTheme.surfaceLight.withValues(alpha: 0.5),
-                            borderRadius: AppTheme.chipRadius,
-                            border: Border.all(
-                              color: GeminiFoodService.instance.isAvailable
-                                  ? AppTheme.fiberGreen.withValues(alpha: 0.3)
-                                  : Colors.white.withValues(alpha: 0.06),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                GeminiFoodService.instance.isAvailable
-                                    ? Icons.auto_awesome_rounded
-                                    : Icons.auto_awesome_outlined,
-                                size: 14,
-                                color: GeminiFoodService.instance.isAvailable
-                                    ? AppTheme.fiberGreen
-                                    : AppTheme.textSecondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                GeminiFoodService.instance.isAvailable
-                                    ? 'AI Connected'
-                                    : 'AI Offline',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: GeminiFoodService.instance.isAvailable
-                                          ? AppTheme.fiberGreen
-                                          : AppTheme.textSecondary,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Settings button
-                        IconButton(
-                          onPressed: _showApiKeyDialog,
-                          icon: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.surface,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.settings_rounded,
-                              size: 18,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Logo
-                    Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.surface,
-                        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3), width: 2),
-                        boxShadow: AppTheme.glowShadow(AppTheme.primary),
-                      ),
-                      child: const Icon(
-                        Icons.restaurant_rounded,
-                        size: 48,
-                        color: AppTheme.primary,
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(duration: 600.ms)
-                        .scale(begin: const Offset(0.5, 0.5)),
-
-                    const SizedBox(height: 28),
-
-                    // App Name
-                    Text(
-                      'YOTRACKEZ',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineLarge
-                          ?.copyWith(
-                            fontSize: 44,
-                            foreground: Paint()
-                              ..shader = AppTheme.primaryGradient.createShader(
-                                  const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
-                          ),
-                    ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      'Snap. Analyze. Eat Smart.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.textSecondary,
-                            letterSpacing: 2.0,
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ).animate().fadeIn(delay: 400.ms, duration: 600.ms),
-
-                    const Spacer(),
-
-                    // Main card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
-                      decoration: AppTheme.glassCard(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primary.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.document_scanner_rounded,
-                              size: 64,
-                              color: AppTheme.primary,
-                            ),
-                          ).animate(onPlay: (c) => c.repeat(reverse: true))
-                           .moveY(begin: -5, end: 5, duration: 2.seconds),
-                           
-                          const SizedBox(height: 24),
-                          
-                          Text(
-                            'Scan Your Food',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Take a photo of your meal and get\ninstant nutritional breakdown',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
-                          ),
-                        ],
-                      ),
-                    )
-                        .animate()
-                        .fadeIn(delay: 600.ms, duration: 600.ms)
-                        .slideY(begin: 0.2),
+                              // Top bar with settings
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  // Profile button
+                                  GestureDetector(
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppTheme.surfaceLight.withValues(alpha: 0.5),
+                                        border: Border.all(color: AppTheme.primary.withValues(alpha: 0.2)),
+                                      ),
+                                      child: const Icon(
+                                        Icons.person_rounded,
+                                        size: 18,
+                                        color: AppTheme.primary,
+                                      ),
+                                    ),
+                                  ),
+                                  // AI status badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      color: GeminiFoodService.instance.isAvailable
+                                          ? AppTheme.fiberGreen.withValues(alpha: 0.1)
+                                          : AppTheme.surfaceLight.withValues(alpha: 0.5),
+                                      borderRadius: AppTheme.chipRadius,
+                                      border: Border.all(
+                                        color: GeminiFoodService.instance.isAvailable
+                                            ? AppTheme.fiberGreen.withValues(alpha: 0.3)
+                                            : Colors.white.withValues(alpha: 0.06),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          GeminiFoodService.instance.isAvailable
+                                              ? Icons.auto_awesome_rounded
+                                              : Icons.auto_awesome_outlined,
+                                          size: 14,
+                                          color: GeminiFoodService.instance.isAvailable
+                                              ? AppTheme.fiberGreen
+                                              : AppTheme.textSecondary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          GeminiFoodService.instance.isAvailable
+                                              ? 'AI Connected'
+                                              : 'AI Ready',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: GeminiFoodService.instance.isAvailable
+                                                    ? AppTheme.fiberGreen
+                                                    : AppTheme.primary,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
 
-                    const Spacer(),
+                              const SizedBox(height: 16),
+
+                              // Logo - Cyber Blade Wings Emblem (Static on main UI dashboard)
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppTheme.surface,
+                                  border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3), width: 2),
+                                  boxShadow: AppTheme.glowShadow(AppTheme.primary),
+                                ),
+                                child: const CyberBladeWingsLogo(
+                                  size: 64,
+                                  animateStartupScan: false, // Fully static on main UI dashboard (NO ROTATION)
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(duration: 600.ms)
+                                  .scale(begin: const Offset(0.5, 0.5)),
+
+                              const SizedBox(height: 28),
+
+                              // App Name
+                              Text(
+                                'YOTRACKEZ',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineLarge
+                                    ?.copyWith(
+                                      fontSize: 44,
+                                      foreground: Paint()
+                                        ..shader = AppTheme.primaryGradient.createShader(
+                                            const Rect.fromLTWH(0.0, 0.0, 200.0, 70.0)),
+                                    ),
+                              ).animate().fadeIn(delay: 200.ms, duration: 600.ms),
+
+                              const SizedBox(height: 8),
+
+                              Text(
+                                'Snap. Analyze. Eat Smart.',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                      letterSpacing: 2.0,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                              ).animate().fadeIn(delay: 400.ms, duration: 600.ms),
+
+                              const SizedBox(height: 24),
+
+                              // Main card
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+                                decoration: AppTheme.glassCard(),
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primary.withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.document_scanner_rounded,
+                                        size: 48,
+                                        color: AppTheme.primary,
+                                      ),
+                                    ).animate(onPlay: (c) => c.repeat(reverse: true))
+                                     .moveY(begin: -5, end: 5, duration: 2.seconds),
+                                     
+                                    const SizedBox(height: 16),
+                                    
+                                    Text(
+                                      'Scan Your Food',
+                                      style: Theme.of(context).textTheme.headlineMedium,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Take a photo of your meal and get\ninstant nutritional breakdown',
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                                    ),
+                                  ],
+                                ),
+                              )
+                                  .animate()
+                                  .fadeIn(delay: 600.ms, duration: 600.ms)
+                                  .slideY(begin: 0.2),
+
+                              const SizedBox(height: 24),
 
                     // SCAN button (or analyzing state)
                     Container(
@@ -571,7 +710,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 14),
 
-                    // SEARCH button (new!)
+                    // SEARCH button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -601,6 +740,70 @@ class _HomeScreenState extends State<HomeScreen> {
                         .fadeIn(delay: 900.ms, duration: 600.ms)
                         .slideY(begin: 0.3),
 
+                    const SizedBox(height: 10),
+
+                    // SCAN BARCODE button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: _navigateToBarcodeScan,
+                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 22),
+                        label: const Text(
+                          'SCAN BARCODE',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.fatYellow,
+                          side: BorderSide(
+                            color: AppTheme.fatYellow.withValues(alpha: 0.4),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppTheme.buttonRadius,
+                          ),
+                        ),
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 920.ms, duration: 600.ms)
+                        .slideY(begin: 0.3),
+
+                    const SizedBox(height: 10),
+
+                    // HEALTH INSIGHTS button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: OutlinedButton.icon(
+                        onPressed: _navigateToInsights,
+                        icon: const Icon(Icons.insights_rounded, size: 22),
+                        label: const Text(
+                          'HEALTH INSIGHTS',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.accent,
+                          side: BorderSide(
+                            color: AppTheme.accent.withValues(alpha: 0.4),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppTheme.buttonRadius,
+                          ),
+                        ),
+                      ),
+                    )
+                        .animate()
+                        .fadeIn(delay: 950.ms, duration: 600.ms)
+                        .slideY(begin: 0.3),
+
                     const SizedBox(height: 18),
 
                     // Features row
@@ -608,16 +811,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _FeatureChip(icon: Icons.bolt_rounded, label: 'Instant'),
-                        _FeatureChip(icon: Icons.wifi_off_rounded, label: 'Offline'),
+                        _FeatureChip(icon: Icons.auto_awesome_rounded, label: 'Smart AI'),
                         _FeatureChip(icon: Icons.verified_rounded, label: 'USDA Data'),
                       ],
                     ).animate().fadeIn(delay: 1000.ms, duration: 600.ms),
 
+                    const SizedBox(height: 24),
+
+                    // ── Water Tracker ──────────────────────────────────
+                    const WaterTrackerWidget()
+                        .animate()
+                        .fadeIn(delay: 1100.ms, duration: 600.ms)
+                        .slideY(begin: 0.3),
+
+                    const SizedBox(height: 14),
+
+                    // ── Streak Card ────────────────────────────────────
+                    _StreakCard()
+                        .animate()
+                        .fadeIn(delay: 1200.ms, duration: 600.ms)
+                        .slideY(begin: 0.3),
+
                     const SizedBox(height: 32),
-                  ],
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
+
+            // Full-screen scanning animation while Gemini analyzes the photo
+            if (_analyzing)
+              Positioned.fill(
+                child: FoodScanOverlay(imageBytes: _analyzingImageBytes),
+              ),
           ],
         ),
       ),
@@ -654,6 +882,165 @@ class _FeatureChip extends StatelessWidget {
                   fontSize: 11,
                 ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakCard extends StatefulWidget {
+  @override
+  State<_StreakCard> createState() => _StreakCardState();
+}
+
+class _StreakCardState extends State<_StreakCard> {
+  @override
+  void initState() {
+    super.initState();
+    StreakService.instance.addListener(_rebuild);
+  }
+
+  void _rebuild() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    StreakService.instance.removeListener(_rebuild);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final svc = StreakService.instance;
+    final streak = svc.streak;
+    final longest = svc.longestStreak;
+    final loggedToday = svc.loggedToday;
+
+    // Build fire emojis (up to 7)
+    final fires = streak == 0
+        ? ''
+        : List.filled(streak.clamp(0, 7), '🔥').join();
+
+    final message = streak == 0
+        ? 'Snap a meal to start your streak!'
+        : loggedToday
+            ? 'Logged today — keep it up!'
+            : 'Log a meal to keep the streak alive!';
+
+    final accentColor = streak >= 7
+        ? const Color(0xFFFFB800)
+        : streak >= 3
+        ? AppTheme.accent
+            : AppTheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF0D1B3E),
+            accentColor.withValues(alpha: 0.1),
+          ],
+        ),
+        border: Border.all(
+          color: streak > 0
+              ? accentColor.withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.08),
+          width: 1,
+        ),
+        boxShadow: streak >= 3 ? AppTheme.glowShadow(accentColor) : null,
+      ),
+      child: Row(
+        children: [
+          // Streak number circle
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: accentColor.withValues(alpha: 0.15),
+              border: Border.all(
+                color: accentColor.withValues(alpha: 0.4),
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: streak == 0
+                  ? Icon(Icons.local_fire_department_outlined,
+                      color: accentColor.withValues(alpha: 0.5), size: 26)
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$streak',
+                          style: TextStyle(
+                            color: accentColor,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        ),
+                        Text(
+                          streak == 1 ? 'day' : 'days',
+                          style: TextStyle(
+                            color: accentColor.withValues(alpha: 0.7),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      streak == 0 ? 'Start Your Streak' : 'Daily Streak',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (streak > 0) ...[
+                      const SizedBox(width: 6),
+                      Text(fires, style: const TextStyle(fontSize: 13)),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    fontSize: 11,
+                  ),
+                ),
+                if (longest > 0 && longest > streak) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Best: $longest days',
+                    style: TextStyle(
+                      color: accentColor.withValues(alpha: 0.6),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (loggedToday)
+            Icon(Icons.check_circle_rounded, color: accentColor, size: 22),
         ],
       ),
     );

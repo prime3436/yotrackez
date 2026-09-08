@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/nutrition_data.dart';
-import 'api_key_service.dart';
+import 'image_preprocessor.dart';
+
 
 /// Gemini Vision-based food recognition service.
 ///
@@ -23,22 +24,34 @@ class GeminiFoodService {
     return _instance!;
   }
 
-  /// Whether the service is available (API key is set).
-  bool get isAvailable => ApiKeyService.instance.hasApiKey;
+  /// Whether the service is available (Backend proxy is available by default, or user key is set).
+  bool get isAvailable => true;
 
   /// Analyze a food image using Gemini Vision.
-  /// Returns a NutritionData object with full ingredient breakdown.
-  /// Throws on error so the caller can display the message.
+  ///
+  /// Runs the full preprocessing pipeline (resize, orient, normalise) before
+  /// sending to the Gemini API, so the model receives a clean, well-exposed
+  /// image regardless of camera conditions.
+  ///
+  /// Returns a NutritionData object with full ingredient breakdown and
+  /// portion size estimate. Throws on error so the caller can show the message.
   Future<NutritionData?> analyzeFood(Uint8List imageBytes) async {
-    final apiKey = ApiKeyService.instance.apiKey;
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('No API key configured. Tap ⚙️ to add one.');
+    // ── 1. Image preprocessing ─────────────────────────────────────────────
+    Uint8List processedBytes;
+    try {
+      final preprocessed = await ImagePreprocessor.process(imageBytes);
+      processedBytes = preprocessed.bytes;
+      debugPrint('[GeminiFood] Preprocessed: $preprocessed');
+    } catch (e) {
+      debugPrint('[GeminiFood] Preprocessing failed ($e), using raw bytes');
+      processedBytes = imageBytes;
     }
 
-    debugPrint('[GeminiFood] Analyzing food image (${imageBytes.length} bytes)...');
+    const bool useProxy = true;
+    debugPrint('[GeminiFood] Analyzing food image (${processedBytes.length} bytes, useProxy=$useProxy)...');
 
     // Convert image to base64
-    final base64Image = base64Encode(imageBytes);
+    final base64Image = base64Encode(processedBytes);
 
     // Build the request
     final requestBody = {
@@ -65,42 +78,41 @@ class GeminiFoodService {
 
     // Make the API call
     final http.Response response;
-    // Make the API call with retry for rate limits
     const maxRetries = 3;
-    final models = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-    ];
-    
+
     http.Response? lastResponse;
-    
+
     for (var attempt = 0; attempt < maxRetries; attempt++) {
-      final model = models[attempt.clamp(0, models.length - 1)];
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
-      
+      final String url = 'https://nutrisnapproxy.vercel.app/api/analyze';
+
       try {
         lastResponse = await http.post(
           Uri.parse(url),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(requestBody),
-        );
+        ).timeout(const Duration(seconds: 45));
       } catch (e) {
-        throw Exception('Network error: Could not reach Gemini API. Check your internet connection.');
-      }
-
-      if (lastResponse.statusCode == 429) {
-        // Rate limited — wait and retry with next model
-        final waitSecs = (attempt + 1) * 3; // 3s, 6s, 9s
-        debugPrint('[GeminiFood] Rate limited. Waiting ${waitSecs}s, trying $model...');
-        await Future.delayed(Duration(seconds: waitSecs));
+        debugPrint('[GeminiFood] Network error/timeout on attempt $attempt: $e');
+        if (attempt == maxRetries - 1) {
+          throw Exception('Could not reach Gemini API backend. Please check your internet connection and try again.');
+        }
+        await Future.delayed(const Duration(milliseconds: 1500));
         continue;
       }
-      
-      // Not rate limited — break out
+
+      // Retry on Rate limit (429) or Server/Overload errors (500, 502, 503, 504)
+      if (lastResponse.statusCode == 429 || lastResponse.statusCode >= 500) {
+        final waitSecs = (attempt + 1) * 2;
+        debugPrint('[GeminiFood] Server status ${lastResponse.statusCode}. Waiting ${waitSecs}s, retrying...');
+        if (attempt < maxRetries - 1) {
+          await Future.delayed(Duration(seconds: waitSecs));
+          continue;
+        }
+      }
+
       break;
     }
-    
+
     response = lastResponse!;
 
     // Check for API errors
@@ -148,20 +160,39 @@ class GeminiFoodService {
   }
 
   /// Build the prompt that tells Gemini what to return.
+  ///
+  /// Includes explicit instructions for:
+  ///   - Food detection (name, category)
+  ///   - Portion size estimation (volume/area/depth heuristics)
+  ///   - Per-ingredient nutrition breakdown for complex dishes
+  ///   - Full macro & micronutrient data
   String _buildPrompt() {
-    return '''Analyze this food image and identify the food item(s). Return a JSON object with detailed nutrition information.
+    return '''You are an expert food nutritionist and computer vision system.
+Analyze this food image and return a detailed JSON nutrition report.
 
-RULES:
-- Identify the PRIMARY food item in the image
-- If it's a complex dish (curry, biryani, etc.), list ALL ingredients with individual nutrition
-- If it's a simple item (banana, apple, bread), don't include ingredients array
-- Use realistic nutrition values based on standard serving sizes
-- All nutrition values should be per serving
+STEP 1 — FOOD DETECTION:
+- Identify all food items visible (primary dish + any sides)
+- Classify the food category (e.g. grain, protein, vegetable, dairy, snack)
 
-Return EXACTLY this JSON structure (no markdown, no explanation):
+STEP 2 — PORTION SIZE ESTIMATION:
+- Estimate the portion size using visual cues (plate diameter reference ~26cm,
+  food height/depth, item count for discrete foods like pieces/slices)
+- Express portion as weight in grams AND a human description (e.g. "1 cup (240ml)",
+  "1 medium slice (80g)", "1 plate (350g)")
+- Set serving_size to this estimate
+- Scale all nutrition values to match the estimated portion (not per-100g)
+
+STEP 3 — NUTRITION CALCULATION:
+- Use standard USDA/WHO nutrition references
+- For complex dishes list ALL major ingredients with per-ingredient nutrition
+- For simple items (single fruit, packaged snack) omit the ingredients array
+
+RETURN EXACTLY this JSON (no markdown, no commentary):
 {
   "food_name": "Name of the food",
-  "serving_size": "1 serving description with weight",
+  "food_category": "grain | protein | vegetable | dairy | snack | beverage | mixed",
+  "serving_size": "estimated portion with weight e.g. 1 plate (350g)",
+  "portion_confidence": "high | medium | low",
   "calories": 0.0,
   "carbs": {"name": "Carbohydrates", "amount": 0.0, "unit": "g", "daily_percent": 0},
   "protein": {"name": "Protein", "amount": 0.0, "unit": "g", "daily_percent": 0},
@@ -177,7 +208,7 @@ Return EXACTLY this JSON structure (no markdown, no explanation):
   "ingredients": [
     {"name": "Ingredient Name", "amount": "50g", "calories": 0, "carbs": 0, "protein": 0, "fat": 0, "fiber": 0}
   ],
-  "health_tip": "One-line health tip about this food"
+  "health_tip": "One actionable health tip about this specific food"
 }
 
 If the image does NOT contain food, return:

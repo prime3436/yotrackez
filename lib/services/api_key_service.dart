@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Uses SharedPreferences for persistent local storage.
 class ApiKeyService {
   static const String _apiKeyPref = 'gemini_api_key';
-  static const String _defaultApiKey = '';
   static ApiKeyService? _instance;
   String? _cachedKey;
 
@@ -15,11 +14,11 @@ class ApiKeyService {
     return _instance!;
   }
 
-  /// Whether an API key is configured (default or custom).
-  bool get hasApiKey => (apiKey ?? '').isNotEmpty;
+  /// Whether a valid Gemini API key is configured locally by the user.
+  bool get hasApiKey => (_cachedKey != null && _cachedKey!.trim().isNotEmpty);
 
-  /// Get the stored API key, falling back to the default.
-  String? get apiKey => (_cachedKey != null && _cachedKey!.isNotEmpty) ? _cachedKey : _defaultApiKey;
+  /// Get the stored API key.
+  String? get apiKey => _cachedKey?.trim();
 
   /// Load the API key from storage.
   Future<void> load() async {
@@ -30,8 +29,9 @@ class ApiKeyService {
   /// Save a new API key.
   Future<void> saveApiKey(String key) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_apiKeyPref, key.trim());
-    _cachedKey = key.trim();
+    final trimmed = key.trim();
+    await prefs.setString(_apiKeyPref, trimmed);
+    _cachedKey = trimmed;
   }
 
   /// Remove the stored API key.

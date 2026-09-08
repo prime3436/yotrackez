@@ -11,6 +11,14 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+.firebase/
+*.txt
+*.zip
+__pycache__/
+dump_*.py
+find_*.py
+test_*.py
+all_user_avatar.py
 
 # IntelliJ related
 *.iml

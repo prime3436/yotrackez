@@ -24,6 +24,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="YOTRACKEZ">
+  <meta name="theme-color" content="#7B6FFF">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -42,6 +43,17 @@
   <canvas id="tfjs-canvas" style="display:none;"></canvas>
 
   <script src="classifier.js"></script>
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.update();
+          }
+        });
+      });
+    }
+  </script>
+  <script src="flutter_bootstrap.js?v=20260722_v3" async></script>
 </body>
 </html>

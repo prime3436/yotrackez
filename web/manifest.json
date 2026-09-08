@@ -1,11 +1,11 @@
 {
-    "name": "nutri_snap",
-    "short_name": "nutri_snap",
+    "name": "YOTRACKEZ",
+    "short_name": "YOTRACKEZ",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#07080F",
+    "theme_color": "#7B6FFF",
+    "description": "Snap. Analyze. Eat Smart. — AI-powered food tracking and nutrition insights.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

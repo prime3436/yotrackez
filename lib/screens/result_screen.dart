@@ -4,8 +4,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/nutrition_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/nutrient_card.dart';
+import '../widgets/meal_added_avatar_overlay.dart';
+import '../models/meal_entry.dart';
+import '../services/meal_db_service.dart';
 
-class ResultScreen extends StatelessWidget {
+class ResultScreen extends StatefulWidget {
   final Uint8List? imageBytes;
   final NutritionData nutritionData;
 
@@ -16,6 +19,62 @@ class ResultScreen extends StatelessWidget {
   });
 
   @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  double _portionMultiplier = 1;
+  bool _saving = false;
+
+  NutritionData get _data => widget.nutritionData.scale(_portionMultiplier);
+
+  Future<void> _addToMyDay(BuildContext context) async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    final data = _data;
+    final now = DateTime.now();
+    final entry = MealEntry(
+      foodName: data.foodName,
+      calories: data.calories,
+      protein: data.protein.amount,
+      carbs: data.carbs.amount,
+      fat: data.fat.amount,
+      fiber: data.fiber.amount,
+      mealType: MealEntry.getMealType(now),
+      timestamp: now,
+    );
+
+    // Capture context-dependent objects before the async gap
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      await MealDbService.instance.insertMeal(entry);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _saving = false);
+        messenger.showSnackBar(
+          SnackBar(content: Text('Could not save this meal: $e')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    // Gamified feedback: flying food -> avatar eats -> power-up sound ->
+    // possible avatar state change, all in the animated overlay.
+    await MealAddedAvatarOverlay.show(
+      // ignore: use_build_context_synchronously
+      context,
+      foodName: data.foodName,
+      calories: data.calories,
+    );
+
+    if (navigator.mounted) navigator.pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
@@ -24,7 +83,7 @@ class ResultScreen extends StatelessWidget {
           slivers: [
             // Hero image app bar (only if we have an image)
             SliverAppBar(
-              expandedHeight: imageBytes != null ? 280 : 80,
+              expandedHeight: widget.imageBytes != null ? 280 : 80,
               pinned: true,
               backgroundColor: AppTheme.surface,
               leading: IconButton(
@@ -38,13 +97,13 @@ class ResultScreen extends StatelessWidget {
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
-              flexibleSpace: imageBytes != null
+              flexibleSpace: widget.imageBytes != null
                   ? FlexibleSpaceBar(
                       background: Stack(
                         fit: StackFit.expand,
                         children: [
                           Image.memory(
-                            imageBytes!,
+                            widget.imageBytes!,
                             fit: BoxFit.cover,
                           ),
                           Container(
@@ -78,7 +137,7 @@ class ResultScreen extends StatelessWidget {
   }
 
   Widget _buildResultContent(BuildContext context) {
-    final data = nutritionData;
+    final data = _data;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
       child: Column(
@@ -103,7 +162,9 @@ class ResultScreen extends StatelessWidget {
                     borderRadius: AppTheme.chipRadius,
                   ),
                   child: Text(
-                    data.servingSize,
+                    _portionMultiplier == 1
+                        ? data.servingSize
+                        : '${_portionLabel(_portionMultiplier)} of ${data.servingSize}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.primary,
                         ),
@@ -161,8 +222,12 @@ class ResultScreen extends StatelessWidget {
             ),
           )
               .animate()
-              .fadeIn(delay: 200.ms, duration: 400.ms)
-              .scale(begin: const Offset(0.9, 0.9)),
+              .fadeIn(delay: 40.ms, duration: 250.ms)
+              .scale(begin: const Offset(0.95, 0.95)),
+
+          const SizedBox(height: 28),
+
+          _buildPortionControl(context, data),
 
           const SizedBox(height: 28),
 
@@ -170,7 +235,7 @@ class ResultScreen extends StatelessWidget {
           Text(
             'Macronutrients',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 18),
-          ).animate().fadeIn(delay: 300.ms),
+          ).animate().fadeIn(delay: 60.ms),
 
           const SizedBox(height: 16),
 
@@ -200,7 +265,7 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
+          ).animate().fadeIn(delay: 80.ms, duration: 250.ms),
 
           const SizedBox(height: 28),
 
@@ -216,7 +281,7 @@ class ResultScreen extends StatelessWidget {
           Text(
             'Other Nutrients',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 18),
-          ).animate().fadeIn(delay: 500.ms),
+          ).animate().fadeIn(delay: 100.ms),
 
           const SizedBox(height: 12),
 
@@ -229,14 +294,14 @@ class ResultScreen extends StatelessWidget {
               .asMap()
               .entries
               .map((e) => e.value.animate().fadeIn(
-                  delay: (600 + e.key * 100).ms, duration: 400.ms)),
+                  delay: (100 + e.key * 30).ms, duration: 250.ms)),
 
           if (data.vitamins.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text(
               'Vitamins & Minerals',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 18),
-            ).animate().fadeIn(delay: 800.ms),
+            ).animate().fadeIn(delay: 120.ms),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8, runSpacing: 8,
@@ -256,7 +321,7 @@ class ResultScreen extends StatelessWidget {
                         ),
                       ))
                   .toList(),
-            ).animate().fadeIn(delay: 900.ms, duration: 400.ms),
+            ).animate().fadeIn(delay: 130.ms, duration: 250.ms),
           ],
 
           if (data.healthTip.isNotEmpty) ...[
@@ -285,25 +350,136 @@ class ResultScreen extends StatelessWidget {
                   ),
                 ],
               ),
-            ).animate().fadeIn(delay: 1000.ms, duration: 400.ms),
+            ).animate().fadeIn(delay: 140.ms, duration: 250.ms),
           ],
 
           const SizedBox(height: 32),
 
-          SizedBox(
-            width: double.infinity, height: 56,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.qr_code_scanner_rounded),
-              label: const Text('Scan Another Food'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.primary,
-                side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.5)),
-                shape: RoundedRectangleBorder(borderRadius: AppTheme.buttonRadius),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                    label: const Text('Scan Another'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primary,
+                      side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.5)),
+                      shape: RoundedRectangleBorder(borderRadius: AppTheme.buttonRadius),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ).animate().fadeIn(delay: 1100.ms, duration: 400.ms),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 1,
+                child: SizedBox(
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: _saving ? null : () => _addToMyDay(context),
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_task_rounded, size: 20),
+                    label: Text(_saving ? 'SAVING...' : 'ADD TO DIARY'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.black,
+                      elevation: 6,
+                      shadowColor: AppTheme.primary.withValues(alpha: 0.4),
+                      shape: RoundedRectangleBorder(borderRadius: AppTheme.buttonRadius),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ).animate().fadeIn(delay: 50.ms, duration: 250.ms),
+        ],
+      ),
+    );
+  }
+
+  String _portionLabel(double multiplier) {
+    if (multiplier == 0.5) return 'Half serving';
+    if (multiplier == 1.5) return '1½ servings';
+    if (multiplier == 2) return '2 servings';
+    return '${multiplier.toStringAsFixed(1)} servings';
+  }
+
+  Widget _buildPortionControl(BuildContext context, NutritionData data) {
+    final confidence = data.portionConfidence.trim().isEmpty
+        ? 'medium'
+        : data.portionConfidence.trim().toLowerCase();
+    final confidenceColor = switch (confidence) {
+      'high' => AppTheme.fiberGreen,
+      'low' => AppTheme.calorieOrange,
+      _ => AppTheme.primary,
+    };
+    const portions = [0.5, 1.0, 1.5, 2.0];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLight.withValues(alpha: 0.25),
+        borderRadius: AppTheme.cardRadius,
+        border: Border.all(color: confidenceColor.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.scale_rounded, size: 19, color: confidenceColor),
+              const SizedBox(width: 8),
+              Text('Confirm portion',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      )),
+              const Spacer(),
+              Text('${confidence[0].toUpperCase()}${confidence.substring(1)} confidence',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: confidenceColor,
+                        fontWeight: FontWeight.w600,
+                      )),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text('Adjust the AI estimate before logging. Calories and all nutrients update together.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    height: 1.35,
+                  )),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: portions.map((portion) {
+              final selected = _portionMultiplier == portion;
+              return ChoiceChip(
+                label: Text(_portionLabel(portion)),
+                selected: selected,
+                onSelected: (_) => setState(() => _portionMultiplier = portion),
+                selectedColor: AppTheme.primary.withValues(alpha: 0.2),
+                backgroundColor: AppTheme.background,
+                labelStyle: TextStyle(
+                  color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+                side: BorderSide(
+                  color: selected
+                      ? AppTheme.primary.withValues(alpha: 0.7)
+                      : Colors.white.withValues(alpha: 0.08),
+                ),
+              );
+            }).toList(),
+          ),
         ],
       ),
     );
@@ -348,7 +524,7 @@ class ResultScreen extends StatelessWidget {
               ),
             ),
           ],
-        ).animate().fadeIn(delay: 450.ms),
+        ).animate().fadeIn(delay: 90.ms),
 
         const SizedBox(height: 16),
 
@@ -360,9 +536,9 @@ class ResultScreen extends StatelessWidget {
             ingredient: ingredient,
             index: index,
           ).animate().fadeIn(
-                delay: (500 + index * 80).ms,
-                duration: 400.ms,
-              ).slideX(begin: 0.05);
+                delay: (100 + index * 25).ms,
+                duration: 250.ms,
+              ).slideX(begin: 0.03);
         }),
       ],
     );
@@ -617,50 +793,67 @@ class _DetailRow extends StatelessWidget {
   final Color color;
 
   const _DetailRow({
-    required this.label, required this.value,
-    required this.icon, required this.color,
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Flutter forbids borderRadius with non-uniform border colors.
+    // Fix: ClipRRect clips the Stack; left accent is a Positioned child.
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: AppTheme.glassCard().copyWith(
-        border: Border(
-          left: BorderSide(color: color, width: 4),
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-          right: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textPrimary, fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                  ),
-            ),
-          ),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: color, fontWeight: FontWeight.w800,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: AppTheme.glassCard().copyWith(
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  width: 1,
                 ),
-          ),
-        ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: 20, color: color),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.5,
+                          ),
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 0, top: 0, bottom: 0,
+              child: Container(width: 4, color: color),
+            ),
+          ],
+        ),
       ),
     );
   }

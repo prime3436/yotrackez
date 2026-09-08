@@ -8,20 +8,27 @@
     ],
     "rewrites": [
       {
+        "source": "/api/analyze",
+        "function": "analyzeFood"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css)",
+        "source": "**/*.@(html|js|css|json)",
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "max-age=31536000"
+            "value": "no-cache, no-store, must-revalidate"
           }
         ]
       }
     ]
+  },
+  "functions": {
+    "source": "functions"
   }
 }

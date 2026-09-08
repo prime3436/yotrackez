@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/imagenet_food_mapper.dart';
 import '../services/nutrition_db_service.dart';
+import '../services/nutrition_lookup_service.dart';
 import '../services/web_classifier_service.dart';
 import '../theme/app_theme.dart';
 import 'result_screen.dart';
+
 
 /// Screen that lets the user search and select food from the database.
 /// When an image is provided and running on web, uses TensorFlow.js
@@ -95,7 +97,11 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
       // Convert to suggested foods
       final suggestions = <_SuggestedFood>[];
       for (final mp in mapped) {
-        final food = _results.where((f) => f.id == mp.foodId).firstOrNull;
+        // Image flows intentionally keep the visible result list empty until
+        // the user searches, so candidates must come from the full database.
+        final food = NutritionDbService.instance.allFoods
+            .where((f) => f.id == mp.foodId)
+            .firstOrNull;
         if (food != null) {
           suggestions.add(_SuggestedFood(
             food: food,
@@ -134,23 +140,55 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     });
   }
 
-  void _selectFood(FoodEntry food) {
-    final data = NutritionDbService.instance.lookupById(food.id);
-    if (data == null) return;
+  Future<void> _selectFood(FoodEntry food) async {
+    // Show a brief loading indicator while we look up nutrition
+    // (may involve network call if not in local DB)
+    setState(() => _classifying = true);
 
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 400),
-        pageBuilder: (context, animation, _) => ResultScreen(
-          imageBytes: widget.imageBytes,
-          nutritionData: data,
+    try {
+      final data = await NutritionLookupService.instance.lookup(food.name);
+
+      if (!mounted) return;
+      setState(() => _classifying = false);
+
+      if (data == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not find nutrition data for "${food.name}"'),
+            backgroundColor: AppTheme.calorieOrange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        return;
+      }
+
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 400),
+          pageBuilder: (context, animation, _) => ResultScreen(
+            imageBytes: widget.imageBytes,
+            nutritionData: data,
+          ),
+          transitionsBuilder: (context, animation, _, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
         ),
-        transitionsBuilder: (context, animation, _, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    );
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _classifying = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Nutrition lookup error: $e'),
+            backgroundColor: AppTheme.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
   }
 
   @override
