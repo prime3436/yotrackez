@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:rive/rive.dart';
 import 'models/user_settings.dart';
 import 'screens/splash_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/dashboard_home_screen.dart';
+import 'screens/scan_ai_screen.dart';
 import 'screens/meal_history_screen.dart';
 import 'services/step_counter_service.dart';
 import 'theme/app_theme.dart';
+import 'theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,7 +15,6 @@ Future<void> main() async {
   await RiveNative.init();
   runApp(const YOTRACKEZApp());
 }
-
 
 class YOTRACKEZApp extends StatelessWidget {
   const YOTRACKEZApp({super.key});
@@ -29,7 +30,7 @@ class YOTRACKEZApp extends StatelessWidget {
   }
 }
 
-/// Main shell with bottom navigation (Home & History) without the 3D avatar figure.
+/// Main 3-tab shell: Home | Scan & AI | History & Diary
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -43,13 +44,13 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    // Initialize services
     UserSettings.instance.load();
     StepCounterService.instance.start();
   }
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
+  static const List<Widget> _screens = [
+    DashboardHomeScreen(),
+    ScanAiScreen(),
     MealHistoryScreen(),
   ];
 
@@ -64,7 +65,8 @@ class _MainShellState extends State<MainShell> {
         decoration: BoxDecoration(
           color: AppTheme.surface,
           border: Border(
-            top: BorderSide(color: AppTheme.primary.withValues(alpha: 0.15), width: 1),
+            top: BorderSide(
+                color: AppColors.primaryAction.withValues(alpha: 0.15), width: 1),
           ),
         ),
         child: BottomNavigationBar(
@@ -72,12 +74,17 @@ class _MainShellState extends State<MainShell> {
           onTap: (i) => setState(() => _currentIndex = i),
           backgroundColor: Colors.transparent,
           elevation: 0,
-          selectedItemColor: AppTheme.primary,
+          selectedItemColor: AppColors.primaryAction,
           unselectedItemColor: AppTheme.textSecondary,
           type: BottomNavigationBarType.fixed,
-          selectedFontSize: 12,
-          unselectedFontSize: 11,
+          selectedFontSize: 11,
+          unselectedFontSize: 10,
           items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_rounded),
+              activeIcon: Icon(Icons.home_rounded),
+              label: 'Home',
+            ),
             BottomNavigationBarItem(
               icon: Icon(Icons.qr_code_scanner_rounded),
               activeIcon: Icon(Icons.qr_code_scanner_rounded),

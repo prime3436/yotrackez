@@ -42,6 +42,8 @@ class StreakService extends ChangeNotifier {
   }
 
   /// Call this whenever a meal is successfully saved.
+  /// Checks whether today was already logged, maintains consecutive streaks across days,
+  /// and persists current and longest streak records.
   Future<void> recordMeal() async {
     final prefs = await SharedPreferences.getInstance();
     final today = _todayKey();

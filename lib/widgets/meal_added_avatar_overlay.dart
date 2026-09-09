@@ -43,7 +43,6 @@ class MealAddedAvatarOverlay extends StatefulWidget {
       builder: (ctx) => MealAddedAvatarOverlay(
         foodName: foodName,
         calories: calories,
-        onDismissed: () => Navigator.of(ctx).pop(),
       ),
     );
   }
@@ -246,10 +245,7 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
           child: Material(
             color: Colors.transparent,
             child: GestureDetector(
-              onTap: () {
-                Navigator.of(context).pop();
-                widget.onDismissed?.call();
-              },
+              onTap: () => Navigator.of(context).pop(),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -313,10 +309,7 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
                         moodColor: _moodColor,
                         stateChanged: stateChanged,
                         previousLabel: UserSettings.instance.getAvatarLabel(_previousState),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          widget.onDismissed?.call();
-                        },
+                        onTap: () => Navigator.of(context).pop(),
                       ),
                     ),
                 ],
