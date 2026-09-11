@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YOTRACKEZ - Snap. Analyze. Eat Smart.</title>
+  <meta name="description"
+    content="Futuristic AI-powered food scanning, nutrition tracking, macro analysis, and interactive cyber avatar.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="app-background">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-group">
+        <div class="cyber-emblem">
+          <div class="emblem-wing wing-left"></div>
+          <div class="emblem-core">⚡</div>
+          <div class="emblem-wing wing-right"></div>
+        </div>
+        <div>
+          <h1 class="brand-title">YOTRACKEZ <span class="badge-tag">AI v2.4</span></h1>
+          <p class="brand-tagline">Snap • Analyze • Eat Smart</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btnApiKey" class="btn-glass btn-sm">
+          <span class="icon">✨</span> Gemini API Key
+        </button>
+        <div class="level-pill">
+          <span class="level-icon">🛡️</span>
+          <span id="headerLevelText">LVL 1</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="tab-scan">
+        <span class="tab-icon">📷</span> Scan & AI
+      </button>
+      <button class="nav-tab" data-tab="tab-dashboard">
+        <span class="tab-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-tab" data-tab="tab-history">
+        <span class="tab-icon">📜</span> History
+      </button>
+      <button class="nav-tab" data-tab="tab-avatar">
+        <span class="tab-icon">🤖</span> Cyber Avatar
+      </button>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- TAB 1: SCAN & AI ANALYZER -->
+      <section id="tab-scan" class="tab-pane active">
+        <div class="grid-2col">
+          <!-- Camera & Upload Zone -->
+          <div class="card glass-card scan-card">
+            <h2 class="card-title"><span class="neon-cyan">AI Food</span> Scanner</h2>
+            <p class="card-desc">Take a photo or upload a food image for instant AI nutrition breakdown.</p>
+
+            <div id="dropzone" class="dropzone">
+              <input type="file" id="fileInput" accept="image/*" class="file-input">
+              <div id="dropzoneContent" class="dropzone-content">
+                <div class="scan-frame">
+                  <div class="scan-laser"></div>
+                  <span class="camera-icon">📷</span>
+                </div>
+                <p class="dropzone-text">Drag & drop your meal photo here<br><span class="highlight-text">or click to
+                    browse file / webcam</span></p>
+              </div>
+              <div id="previewContainer" class="preview-container hidden">
+                <img id="imagePreview" src="" alt="Meal Preview" class="image-preview">
+                <button id="btnRemoveImage" class="btn-circle btn-danger">✕</button>
+              </div>
+            </div>
+
+            <div class="scan-controls">
+              <button id="btnAnalyze" class="btn-neon-primary" disabled>
+                <span class="icon">⚡</span> Analyze Meal with AI
+              </button>
+              <button id="btnManualSearch" class="btn-glass">
+                <span class="icon">🔍</span> Search Food DB
+              </button>
+            </div>
+
+            <!-- Preset Samples -->
+            <div class="presets-section">
+              <span class="presets-label">Or try sample meals:</span>
+              <div class="presets-list">
+                <button class="preset-chip" data-sample="avocado_toast">🥑 Avocado Toast</button>
+                <button class="preset-chip" data-sample="cheeseburger">🍔 Cheeseburger</button>
+                <button class="preset-chip" data-sample="salmon_quinoa">🐟 Salmon Quinoa</button>
+                <button class="preset-chip" data-sample="grilled_chicken_salad">🥗 Chicken Salad</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Analysis Results Panel -->
+          <div class="card glass-card result-card">
+            <h2 class="card-title">Nutrition Breakdown</h2>
+            <div id="resultPlaceholder" class="result-placeholder">
+              <div class="radar-pulse"></div>
+              <p>Scan a meal photo or select a sample food to see instant calorie and macro breakdown.</p>
+            </div>
+
+            <div id="resultContent" class="result-content hidden">
+              <div class="food-header">
+                <span id="resIcon" class="food-emoji">🥗</span>
+                <div>
+                  <h3 id="resName" class="food-name">Meal Name</h3>
+                  <span id="resServing" class="food-serving">1 serving (250g)</span>
+                </div>
+              </div>
+
+              <!-- Macro Grid -->
+              <div class="macro-grid">
+                <div class="macro-card cals">
+                  <span class="macro-val" id="resCals">0</span>
+                  <span class="macro-lbl">Calories (kcal)</span>
+                </div>
+                <div class="macro-card protein">
+                  <span class="macro-val" id="resProtein">0g</span>
+                  <span class="macro-lbl">Protein</span>
+                </div>
+                <div class="macro-card carbs">
+                  <span class="macro-val" id="resCarbs">0g</span>
+                  <span class="macro-lbl">Carbs</span>
+                </div>
+                <div class="macro-card fat">
+                  <span class="macro-val" id="resFat">0g</span>
+                  <span class="macro-lbl">Fats</span>
+                </div>
+              </div>
+
+              <!-- Health Tag -->
+              <div class="health-summary">
+                <span class="health-icon">💡</span>
+                <span id="resInsight">High protein meal, great for workout recovery!</span>
+              </div>
+
+              <div class="log-action">
+                <button id="btnLogMeal" class="btn-neon-emerald">
+                  <span class="icon">➕</span> Log to Daily Diary (+50 XP)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-pane">
+        <div class="dashboard-grid">
+          <!-- Calorie Progress Card -->
+          <div class="card glass-card dash-main">
+            <h2 class="card-title">Daily Calorie Target</h2>
+            <div class="calorie-ring-container">
+              <svg class="calorie-ring" viewBox="0 0 160 160">
+                <circle class="ring-bg" cx="80" cy="80" r="70"></circle>
+                <circle id="calorieRingProgress" class="ring-fill" cx="80" cy="80" r="70" stroke-dasharray="440"
+                  stroke-dashoffset="440"></circle>
+              </svg>
+              <div class="ring-center">
+                <span id="dashCalCurrent" class="cals-number">0</span>
+                <span class="cals-unit">/ 2,200 kcal</span>
+                <span id="dashCalPercent" class="cals-percent">0%</span>
+              </div>
+            </div>
+
+            <div class="remaining-bar-wrapper">
+              <div class="remaining-label">
+                <span>Remaining Today</span>
+                <span id="dashCalRemaining" class="neon-emerald">2,200 kcal</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Macros Card -->
+          <div class="card glass-card dash-macros">
+            <h2 class="card-title">Macro Breakdown</h2>
+            <div class="macro-progress-list">
+              <!-- Protein -->
+              <div class="macro-bar-item">
+                <div class="macro-bar-header">
+                  <span>💪 Protein</span>
+                  <span id="dashProteinText">0 / 140g</span>
+                </div>
+                <div class="progress-track">
+                  <div id="barProtein" class="progress-bar bar-protein" style="width: 0%"></div>
+                </div>
+              </div>
+              <!-- Carbs -->
+              <div class="macro-bar-item">
+                <div class="macro-bar-header">
+                  <span>🍞 Carbs</span>
+                  <span id="dashCarbsText">0 / 250g</span>
+                </div>
+                <div class="progress-track">
+                  <div id="barCarbs" class="progress-bar bar-carbs" style="width: 0%"></div>
+                </div>
+              </div>
+              <!-- Fat -->
+              <div class="macro-bar-item">
+                <div class="macro-bar-header">
+                  <span>🥑 Fats</span>
+                  <span id="dashFatText">0 / 70g</span>
+                </div>
+                <div class="progress-track">
+                  <div id="barFat" class="progress-bar bar-fat" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hydration Tracker -->
+          <div class="card glass-card dash-water">
+            <h2 class="card-title">💧 Hydration Log</h2>
+            <div class="water-status">
+              <span id="waterCurrent" class="water-vol">0 ml</span>
+              <span class="water-goal">Goal: 2,500 ml</span>
+            </div>
+            <div class="progress-track water-track">
+              <div id="barWater" class="progress-bar bar-water" style="width: 0%"></div>
+            </div>
+            <div class="water-actions">
+              <button class="btn-glass btn-sm" id="btnAddWater250">+250 ml Glass 🥤</button>
+              <button class="btn-glass btn-sm" id="btnAddWater500">+500 ml Bottle 🍾</button>
+              <button class="btn-glass btn-sm btn-danger-soft" id="btnResetWater">Reset</button>
+            </div>
+          </div>
+
+          <!-- Activity / Steps -->
+          <div class="card glass-card dash-steps">
+            <h2 class="card-title">👟 Step Counter Simulator</h2>
+            <div class="step-status">
+              <span id="stepCurrent" class="step-num">3,450</span>
+              <span class="step-goal">Goal: 10,000 steps</span>
+            </div>
+            <div class="progress-track">
+              <div id="barSteps" class="progress-bar bar-steps" style="width: 34.5%"></div>
+            </div>
+            <div class="step-actions">
+              <button class="btn-glass btn-sm" id="btnAddSteps1000">+1,000 Steps</button>
+              <button class="btn-glass btn-sm" id="btnAddSteps5000">+5,000 Steps</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: MEAL HISTORY -->
+      <section id="tab-history" class="tab-pane">
+        <div class="card glass-card">
+          <div class="history-header">
+            <h2 class="card-title">📜 Meal Diary History</h2>
+            <button id="btnClearHistory" class="btn-glass btn-sm btn-danger-soft">Clear All</button>
+          </div>
+          <div id="historyList" class="history-list">
+            <!-- Dynamic history items rendered here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: CYBER AVATAR -->
+      <section id="tab-avatar" class="tab-pane">
+        <div class="grid-2col">
+          <div class="card glass-card avatar-hero-card">
+            <div class="avatar-display">
+              <div class="avatar-aura"></div>
+              <div id="avatarMascot" class="cyber-mascot">🤖</div>
+              <h3 id="avatarName" class="avatar-title">CYBER BLADE X</h3>
+              <span id="avatarTitle" class="avatar-subtitle">Level 1 - Novice Tracker</span>
+            </div>
+
+            <div class="xp-container">
+              <div class="xp-header">
+                <span>XP Progress</span>
+                <span id="xpText">0 / 200 XP</span>
+              </div>
+              <div class="progress-track">
+                <div id="barXp" class="progress-bar bar-xp" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card glass-card avatar-dialog-card">
+            <h2 class="card-title">Avatar Voice & Badges</h2>
+            <div class="speech-bubble">
+              <p id="avatarQuote">"Greetings Tracker! Log your meals daily to upgrade my cyber core and boost your
+                health stats."</p>
+            </div>
+
+            <div class="badges-grid">
+              <div class="badge-item active">
+                <span class="badge-icon">🚀</span>
+                <span class="badge-title">First Snap</span>
+              </div>
+              <div class="badge-item" id="badgeHydrated">
+                <span class="badge-icon">💧</span>
+                <span class="badge-title">Hydrated</span>
+              </div>
+              <div class="badge-item" id="badgeMacroMaster">
+                <span class="badge-icon">👑</span>
+                <span class="badge-title">Macro Master</span>
+              </div>
+              <div class="badge-item" id="badgePedometer">
+                <span class="badge-icon">⚡</span>
+                <span class="badge-title">10k Runner</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Persistent Mini Avatar Dock -->
+    <div id="avatarDock" class="persistent-dock">
+      <div class="dock-avatar">🤖</div>
+      <div class="dock-info">
+        <span class="dock-name">CYBER BLADE</span>
+        <span id="dockStatus" class="dock-status">Ready to scan!</span>
+      </div>
+      <button id="dockBtn" class="btn-dock">Open</button>
+    </div>
+
+  </div>
+
+  <!-- Manual Search Modal -->
+  <div id="searchModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🔍 Search Food Database</h3>
+        <button id="btnCloseSearchModal" class="btn-circle btn-glass">✕</button>
+      </div>
+      <input type="text" id="dbSearchInput" placeholder="Type food name (e.g., Salad, Pizza, Oats)..."
+        class="search-input">
+      <div id="searchResultsList" class="search-results-list"></div>
+    </div>
+  </div>
+
+  <!-- Gemini Key Modal -->
+  <div id="apiKeyModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✨ Gemini AI Key Config</h3>
+        <button id="btnCloseKeyModal" class="btn-circle btn-glass">✕</button>
+      </div>
+      <p class="modal-desc">Enter your free Google Gemini API key to enable live vision identification for any food
+        photo.</p>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="search-input">
+      <div class="modal-actions">
+        <button id="btnSaveKey" class="btn-neon-primary">Save Key</button>
+        <button id="btnClearKey" class="btn-glass btn-danger-soft">Clear Key</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="nutrition_db.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

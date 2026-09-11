@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/meal_entry.dart';
+import '../models/nutrition_data.dart';
 import '../models/user_settings.dart';
 import '../services/calorie_body_service.dart';
 import '../services/meal_db_service.dart';
@@ -12,8 +13,9 @@ import '../theme/app_theme.dart';
 import '../widgets/diary_meal_card.dart';
 import '../widgets/macro_ring_widget.dart';
 import '../widgets/yo_avatar_widget.dart';
-import 'food_search_screen.dart';
 import 'profile_screen.dart';
+import 'result_screen.dart';
+import 'unified_scan_screen.dart';
 
 class DashboardHomeScreen extends StatefulWidget {
   const DashboardHomeScreen({super.key});
@@ -53,10 +55,21 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   List<MealEntry> _mealsFor(String type) =>
       _todayMeals.where((m) => m.mealType == type).toList();
 
-  void _navigateToSearch() => Navigator.push(
-    context,
-    MaterialPageRoute(builder: (_) => const FoodSearchScreen()),
-  );
+  /// Opens the unified camera/barcode screen.
+  /// Handles the barcode return (NutritionData) and pushes ResultScreen.
+  Future<void> _navigateToSearch() async {
+    final result = await Navigator.push<NutritionData>(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        pageBuilder: (ctx, anim, sa) => const UnifiedScanScreen(),
+        transitionsBuilder: (ctx, anim, sa, child) =>
+            FadeTransition(opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut), child: child),
+      ),
+    );
+    if (!mounted || result == null) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => ResultScreen(nutritionData: result)));
+  }
 
   @override
   Widget build(BuildContext context) {
