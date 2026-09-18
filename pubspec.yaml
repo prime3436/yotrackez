@@ -1,5 +1,5 @@
 name: nutri_snap
-description: "YOTRACKEZ - Snap. Analyze. Eat Smart."
+description: "YOTRACKEZ - Cross-platform offline nutrition tracker with on-device computer vision."
 publish_to: 'none'
 version: 1.0.0+1
 
