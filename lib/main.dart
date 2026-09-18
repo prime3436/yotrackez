@@ -64,9 +64,16 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: AppTheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryAction.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
           border: Border(
             top: BorderSide(
-                color: AppColors.primaryAction.withValues(alpha: 0.15), width: 1),
+                color: AppColors.primaryAction.withValues(alpha: 0.18), width: 0.5),
           ),
         ),
         child: BottomNavigationBar(
@@ -79,21 +86,28 @@ class _MainShellState extends State<MainShell> {
           type: BottomNavigationBarType.fixed,
           selectedFontSize: 11,
           unselectedFontSize: 10,
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.2,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.w500,
+          ),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_rounded),
+              icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home_rounded),
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_scanner_rounded),
-              activeIcon: Icon(Icons.qr_code_scanner_rounded),
+              icon: Icon(Icons.document_scanner_outlined),
+              activeIcon: Icon(Icons.document_scanner_rounded),
               label: 'Scan & AI',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.timeline_rounded),
-              activeIcon: Icon(Icons.timeline_rounded),
-              label: 'History & Diary',
+              icon: Icon(Icons.history_rounded),
+              activeIcon: Icon(Icons.history_rounded),
+              label: 'Diary',
             ),
           ],
         ),
