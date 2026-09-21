@@ -99,6 +99,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
     final protein = _totals['protein'] ?? 0;
     final carbs = _totals['carbs'] ?? 0;
     final fat = _totals['fat'] ?? 0;
+    final fiber = _totals['fiber'] ?? 0;
     final calProgress = (calEaten / calGoal).clamp(0.0, 1.0);
     final remaining = (calGoal - calEaten).clamp(0.0, double.infinity);
 
@@ -200,6 +201,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
                   protein: protein,
                   carbs: carbs,
                   fat: fat,
+                  fiber: fiber,
                 ).animate().fadeIn(delay: 160.ms, duration: 500.ms).slideY(begin: 0.1),
               ),
             ),
@@ -301,7 +303,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
 // ─── Calorie summary card ──────────────────────────────────────────────────────
 class _CalorieSummaryCard extends StatelessWidget {
   final double calEaten, calGoal, calProgress, remaining;
-  final double protein, carbs, fat;
+  final double protein, carbs, fat, fiber;
 
   const _CalorieSummaryCard({
     required this.calEaten,
@@ -311,6 +313,7 @@ class _CalorieSummaryCard extends StatelessWidget {
     required this.protein,
     required this.carbs,
     required this.fat,
+    required this.fiber,
   });
 
   @override
@@ -418,6 +421,8 @@ class _CalorieSummaryCard extends StatelessWidget {
                   color: AppColors.carbs),
               _MacroChip(label: 'Fat', value: '${fat.toStringAsFixed(0)}g',
                   color: AppColors.fat),
+              _MacroChip(label: 'Fiber', value: '${fiber.toStringAsFixed(0)}g',
+                  color: AppTheme.fiberGreen),
             ],
           ),
         ],

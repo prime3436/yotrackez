@@ -87,12 +87,15 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
     final bodyComp   = CalorieBodyService.instance.bodyComposition;
     final gender     = settings.gender == 'female' ? 'female' : 'male';
 
-    return Container(
-      decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
-      child: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Container(
+          decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
+          child: SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
             // ── Top bar ───────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
@@ -276,10 +279,54 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
               ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
+            const SliverToBoxAdapter(child: SizedBox(height: 96)),
           ],
         ),
       ),
+        ),
+        // ── Floating Quick Scan FAB ──────────────────────────────────────
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: GestureDetector(
+            onTap: _navigateToSearch,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryAction, Color(0xFF6B5CE7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryAction.withValues(alpha: 0.45),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Quick Scan',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ).animate().fadeIn(delay: 600.ms, duration: 400.ms).slideY(begin: 0.3),
+        ),
+      ],
     );
   }
 
