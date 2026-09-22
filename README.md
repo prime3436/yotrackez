@@ -1,33 +1,25 @@
-# 🥗 YOTRACKEZ
+# yotrackez 🥗
 
-A nutrition tracking app I built because I got tired of manually logging food. Point your camera at what you're eating and it figures out the calories and macros for you. No subscriptions, no sign-ups, works offline.
+so basically i got tired of manually searching every food item i eat just to track my calories. built this app to fix that.
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart)](https://dart.dev)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+point your camera at food, it tells you the macros. that's it.
 
 ---
 
-## What it does
+## what's in it
 
-- 📷 **Scan food with your camera** — it recognizes what you're eating using an on-device ML model (so no images leave your phone)
-- 🔢 **Tracks your macros** — calories, protein, carbs, fats, fiber — all pulled from the USDA food database
-- 💧 **Water intake tracker** — set a daily goal and log glasses throughout the day
-- 🔥 **Streaks** — keeps track of your daily logging streak so you stay consistent
-- 📊 **Dashboard** — see everything at a glance, daily progress, weekly history, the works
-- 🔍 **Manual food search** — if scanning doesn't work, just search by name
+- scan food with your camera and it figures out what it is
+- shows you calories, protein, carbs, fats, fiber right away
+- track how much water you drank today
+- daily streaks so you don't forget to log
+- full dashboard with your day's progress
+- search food manually if the camera gets it wrong
 
-Everything runs offline. No cloud, no API costs, no privacy concerns.
-
----
-
-## Tech stuff
-
-Built with **Flutter** so it runs on Android and iOS from the same codebase. The food recognition uses **MobileNet V2** running directly on-device — inference takes under 200ms which feels instant. Nutrition data comes from the **USDA FoodData Central** dataset bundled into a local SQLite database.
+works offline. no account needed. nothing leaves your phone.
 
 ---
 
-## Running it locally
+## how to run it
 
 ```bash
 git clone https://github.com/prime3436/yotrackez.git
@@ -36,22 +28,16 @@ flutter pub get
 flutter run
 ```
 
-You'll need Flutter installed. Connect a device or start an emulator and it should just work.
+need flutter installed, connect a phone or start an emulator and you're good.
 
 ---
 
-## Project layout
+## built with
 
-```
-lib/
-├── models/      # data models, nutrition calculations
-├── screens/     # all the app screens
-├── services/    # ML classifier, food lookup, local storage
-├── theme/       # colors, typography, dark theme
-├── widgets/     # reusable UI components
-└── main.dart    # entry point
-```
+- Flutter (Android + iOS from one codebase)
+- MobileNet V2 for the food recognition — runs on-device, super fast
+- USDA food database for the nutrition data, stored locally in SQLite
 
 ---
 
-Built by **Mohan Sai** — [@prime3436](https://github.com/prime3436)
+made by Mohan Sai — [@prime3436](https://github.com/prime3436)
