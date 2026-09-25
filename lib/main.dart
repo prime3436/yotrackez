@@ -11,7 +11,7 @@ import 'theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Required by rive 0.14.x — initialises the native renderer
+
   await RiveNative.init();
   runApp(const YOTRACKEZApp());
 }
@@ -30,7 +30,6 @@ class YOTRACKEZApp extends StatelessWidget {
   }
 }
 
-/// Main 3-tab shell: Home | Scan & AI | History & Diary
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 

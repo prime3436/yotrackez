@@ -6,8 +6,6 @@ import '../widgets/cyber_blade_wings_logo.dart';
 import '../main.dart';
 import 'onboarding_screen.dart';
 
-/// Pitch-black startup screen featuring the rotating Cyber Blade Wings emblem
-/// and smooth entrance scale transition into the main YOTRACKEZ dashboard.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -25,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _startStartupSequence() async {
-    // Load settings concurrently with the splash animation
+
     await Future.wait([
       UserSettings.instance.load(),
       Future.delayed(const Duration(milliseconds: 2200)),
@@ -80,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Rotating Cyber Blade Wings Emblem
+
                 Container(
                   padding: const EdgeInsets.all(28),
                   decoration: BoxDecoration(
@@ -94,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                   child: const CyberBladeWingsLogo(
                     size: 110,
-                    animateStartupScan: true, // Top & Bottom wings fly out + Cyberpunk Grey laser scan (NO ROTATION)
+                    animateStartupScan: true,
                     animationDuration: Duration(milliseconds: 2200),
                   ),
                 )
@@ -104,7 +102,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 36),
 
-                // App Title
                 Text(
                   'YOTRACKEZ',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -117,7 +114,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 10),
 
-                // Subtitle Status
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

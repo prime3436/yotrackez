@@ -7,8 +7,6 @@ import '../theme/app_theme.dart';
 import '../widgets/avatar_3d_widget.dart';
 import '../widgets/image_source_sheet.dart';
 
-/// Full user profile screen — name, photo, body stats, fitness goal,
-/// and derived BMI / suggested calorie target.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -84,8 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return AppTheme.error;
   }
 
-  /// Base character appearance, driven by BMI (reuses the 5 existing
-  /// avatar art assets — same mapping as UserSettings.bmiBodyState).
   String get _bmiBodyState {
     final b = _bmi;
     if (b <= 0) return 'normal';

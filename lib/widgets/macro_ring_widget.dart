@@ -2,12 +2,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Small circular-progress ring with a label underneath.
-/// Used in the macros row on the Home screen.
 class MacroRingWidget extends StatelessWidget {
   final String label;
-  final double value;   // current grams
-  final double goal;    // daily goal grams
+  final double value;
+  final double goal;
   final Color color;
   final double size;
 
@@ -30,14 +28,14 @@ class MacroRingWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Arc ring
+
           SizedBox(
             width: size,
             height: size,
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Track
+
                 CustomPaint(
                   size: Size(size, size),
                   painter: _RingPainter(
@@ -47,7 +45,7 @@ class MacroRingWidget extends StatelessWidget {
                     strokeWidth: size * 0.09,
                   ),
                 ),
-                // Value text
+
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -108,7 +106,6 @@ class _RingPainter extends CustomPainter {
     final radius = (size.width - strokeWidth) / 2;
     final startAngle = -math.pi / 2;
 
-    // Track arc
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       0,
@@ -123,7 +120,6 @@ class _RingPainter extends CustomPainter {
 
     if (progress <= 0) return;
 
-    // Progress arc with glow
     final progressPaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -139,7 +135,6 @@ class _RingPainter extends CustomPainter {
       progressPaint,
     );
 
-    // Crisp top layer
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       startAngle,

@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/meal_entry.dart';
 import '../theme/app_colors.dart';
 
-/// A single collapsible diary card for one meal-type slot (Breakfast, Lunch, etc.)
 class DiaryMealCard extends StatefulWidget {
-  final String mealType;        // 'breakfast' | 'lunch' | 'snack' | 'dinner'
-  final List<MealEntry> meals;  // entries already filtered to this type
-  final VoidCallback? onAddTap; // opens the appropriate add-meal flow
+  final String mealType;
+  final List<MealEntry> meals;
+  final VoidCallback? onAddTap;
 
   const DiaryMealCard({
     super.key,
@@ -43,8 +42,6 @@ class _DiaryMealCardState extends State<DiaryMealCard>
     _expanded ? _ctrl.forward() : _ctrl.reverse();
   }
 
-  // ── Metadata ────────────────────────────────────────────────────────────
-
   static const _meta = {
     'breakfast': (icon: '🌅', label: 'Breakfast', color: Color(0xFFFFB347)),
     'lunch':     (icon: '🌞', label: 'Lunch',     color: Color(0xFF8B7FFF)),
@@ -73,12 +70,12 @@ class _DiaryMealCardState extends State<DiaryMealCard>
           onTap: _toggle,
           child: Column(
             children: [
-              // ── Header row ─────────────────────────────────────────────
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 child: Row(
                   children: [
-                    // Emoji + color dot
+
                     Container(
                       width: 40,
                       height: 40,
@@ -92,7 +89,7 @@ class _DiaryMealCardState extends State<DiaryMealCard>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Label + calorie count
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +116,7 @@ class _DiaryMealCardState extends State<DiaryMealCard>
                         ],
                       ),
                     ),
-                    // Add button + chevron
+
                     GestureDetector(
                       onTap: widget.onAddTap,
                       child: Container(
@@ -146,7 +143,7 @@ class _DiaryMealCardState extends State<DiaryMealCard>
                   ],
                 ),
               ),
-              // ── Expanded items list ─────────────────────────────────────
+
               SizeTransition(
                 sizeFactor: _expand,
                 child: hasMeals

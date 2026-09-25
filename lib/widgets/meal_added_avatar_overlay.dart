@@ -10,14 +10,6 @@ import 'particle_system.dart';
 import 'super_saiyan_aura.dart';
 import 'yo_avatar_widget.dart';
 
-/// Cinematic full-screen overlay shown every time a meal is stored.
-/// Features:
-///  - Screen-space particle explosion
-///  - 3D spinning/tumbling avatar reveal
-///  - Super Saiyan aura blast
-///  - Weight-level morph with before/after 3D character switch
-///  - Calorie burst HUD
-///  - Ring-pulse shockwave
 class MealAddedAvatarOverlay extends StatefulWidget {
   final String foodName;
   final double calories;
@@ -30,7 +22,6 @@ class MealAddedAvatarOverlay extends StatefulWidget {
     this.onDismissed,
   });
 
-  /// Static helper to trigger the pop-up overlay anywhere.
   static Future<void> show(
     BuildContext context, {
     required String foodName,
@@ -54,12 +45,10 @@ class MealAddedAvatarOverlay extends StatefulWidget {
 class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
     with TickerProviderStateMixin {
 
-  // ─── Shared state ─────────────────────────────────────────────────────────
   double _caloriesEaten = 0;
   String _previousState = 'normal';
   String _currentState = 'normal';
 
-  // ─── Animation phases ──────────────────────────────────────────────────────
   bool _showParticles = false;
   bool _showCard = false;
   bool _showAura = false;
@@ -67,7 +56,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
   bool _flash = false;
   bool _showShockwave = false;
 
-  // ─── 3D spin controller ────────────────────────────────────────────────────
   late AnimationController _spinController;
   late AnimationController _shockwaveController;
   late AnimationController _cardEntryController;
@@ -78,19 +66,16 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
   void initState() {
     super.initState();
 
-    // 3D hero spin: 0→2π in 1.2 s, then settles into slow drift
     _spinController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
 
-    // Shockwave ring expands from centre
     _shockwaveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
 
-    // Card slide-up from bottom
     _cardEntryController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -112,7 +97,7 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
   }
 
   Future<void> _startSequence() async {
-    // Load data first
+
     final totals = await MealDbService.instance.getDayTotals(DateTime.now());
     final burned = StepCounterService.instance.caloriesBurned;
     final eaten = totals['calories'] ?? 0.0;
@@ -128,7 +113,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
       _currentState = currState;
     });
 
-    // ── PHASE 1: Sound + Particles burst (t=0) ─────────────────────────────
     SoundService.instance.playMealLogged();
     setState(() {
       _showParticles = true;
@@ -138,41 +122,35 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
 
     await Future.delayed(const Duration(milliseconds: 150));
 
-    // ── PHASE 2: Screen flash (t=150ms) ────────────────────────────────────
     if (!mounted) return;
     setState(() => _flash = true);
     await Future.delayed(const Duration(milliseconds: 120));
     if (!mounted) return;
     setState(() => _flash = false);
 
-    // ── PHASE 3: 3D Avatar spins into view (t=270ms) ───────────────────────
     if (!mounted) return;
     setState(() => _showAura = true);
     _spinController.forward();
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // ── PHASE 4: Card slides up (t=570ms) ──────────────────────────────────
     if (!mounted) return;
     setState(() => _showCard = true);
     _cardEntryController.forward();
 
     await Future.delayed(const Duration(milliseconds: 700));
 
-    // ── PHASE 5: Avatar morphs to new state (t=1270ms) ─────────────────────
     if (!mounted) return;
     setState(() => _morphed = true);
     if (prevState != currState) {
       SoundService.instance.playPowerUp();
     }
 
-    // ── PHASE 6: Avatar drifts in slow spin indefinitely ──────────────────
     _spinController
       ..stop()
       ..duration = const Duration(seconds: 4)
       ..repeat();
 
-    // ── PHASE 7: Auto-dismiss after 5s (safety net) ────────────────────────
     await Future.delayed(const Duration(seconds: 5));
     if (mounted) {
       Navigator.of(context).pop();
@@ -194,7 +172,7 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final _ = UserSettings.instance.gender; // reserved for gender-specific avatar art
+    final _ = UserSettings.instance.gender;
     final activeState = _morphed ? _currentState : _previousState;
     final stateChanged = _previousState != _currentState && _morphed;
     final label = UserSettings.instance.getAvatarLabel(activeState);
@@ -202,7 +180,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
     return Stack(
       children: [
 
-        // ── Particle Explosion ──────────────────────────────────────────────
         if (_showParticles)
           Center(
             child: ParticleSystem(
@@ -212,7 +189,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
             ),
           ),
 
-        // ── Shockwave ring ──────────────────────────────────────────────────
         if (_showShockwave)
           Center(
             child: AnimatedBuilder(
@@ -232,7 +208,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
             ),
           ),
 
-        // ── Full-screen white flash ─────────────────────────────────────────
         if (_flash)
           Positioned.fill(
             child: Container(color: Colors.white.withValues(alpha: 0.82))
@@ -240,7 +215,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
                 .fadeOut(duration: 200.ms),
           ),
 
-        // ── Main content ────────────────────────────────────────────────────
         Center(
           child: Material(
             color: Colors.transparent,
@@ -250,21 +224,19 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
 
-                  // ── 3D Avatar hero area ───────────────────────────────────
                   SizedBox(
                     width: 300,
                     height: 300,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Super Saiyan aura backdrop
+
                         SuperSaiyanAura(
                           size: 300,
                           color: stateChanged ? AppTheme.calorieOrange : _moodColor,
                           isActive: _showAura,
                         ),
 
-                        // Rive avatar — fires mealAdded trigger, uses real bodyComposition
                         YoAvatarWidget(
                           gender: UserSettings.instance.gender,
                           size: 220,
@@ -273,13 +245,11 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
                           mealAdded: _showAura,
                         ),
 
-                        // Food projectile flies into avatar's chest
                         _FoodProjectile(
                           calories: widget.calories,
                           moodColor: _moodColor,
                         ),
 
-                        // Floating kcal badge
                         Positioned(
                           top: 8,
                           right: 8,
@@ -291,7 +261,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
 
                   const SizedBox(height: 8),
 
-                  // ── Info card slides up ───────────────────────────────────
                   if (_showCard)
                     AnimatedBuilder(
                       animation: _cardEntryController,
@@ -321,10 +290,6 @@ class _MealAddedAvatarOverlayState extends State<MealAddedAvatarOverlay>
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Sub-widgets
-// ════════════════════════════════════════════════════════════════════════════
 
 class _FoodProjectile extends StatefulWidget {
   final double calories;
@@ -450,7 +415,7 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── MEAL LOGGED! title ─────────────────────────────────────────
+
           ShaderMask(
             shaderCallback: (bounds) => LinearGradient(
               colors: [moodColor, Colors.white],
@@ -480,7 +445,6 @@ class _InfoCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // ── Progress bar ────────────────────────────────────────────────
           _CalorieMeter(
             eaten: caloriesEaten,
             limit: UserSettings.instance.calorieLimit.toDouble(),
@@ -489,7 +453,6 @@ class _InfoCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // ── Avatar state change tag ─────────────────────────────────────
           if (stateChanged)
             Container(
               margin: const EdgeInsets.only(bottom: 14),
@@ -516,7 +479,6 @@ class _InfoCard extends StatelessWidget {
               ),
             ).animate().fadeIn().scale(),
 
-          // ── AWESOME button ──────────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -588,10 +550,6 @@ class _CalorieMeter extends StatelessWidget {
     );
   }
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Shockwave ring painter
-// ════════════════════════════════════════════════════════════════════════════
 
 class _ShockwavePainter extends CustomPainter {
   final double radius;

@@ -25,7 +25,7 @@ class ImageSourceSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
+
           Container(
             width: 40,
             height: 4,

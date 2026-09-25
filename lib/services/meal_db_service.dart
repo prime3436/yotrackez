@@ -6,8 +6,6 @@ import 'package:path/path.dart' as path;
 import '../models/meal_entry.dart';
 import 'streak_service.dart';
 
-/// SQLite database service for persistent meal tracking history.
-/// Includes fallback memory & SharedPreferences storage for web and desktop platforms.
 class MealDbService {
   static MealDbService? _instance;
   static MealDbService get instance {
@@ -92,7 +90,6 @@ class MealDbService {
     );
   }
 
-  /// Insert a new meal entry.
   Future<int> insertMeal(MealEntry meal) async {
     final db = await _getDatabase();
     int assignedId;
@@ -108,12 +105,11 @@ class MealDbService {
     }
 
     mealsChangedNotifier.value++;
-    // Record meal for streak tracking (idempotent per day)
+
     StreakService.instance.recordMeal();
     return assignedId;
   }
 
-  /// Get all meals for a specific day.
   Future<List<MealEntry>> getMealsForDay(DateTime date) async {
     final db = await _getDatabase();
     final startOfDay = DateTime(date.year, date.month, date.day);
@@ -136,7 +132,6 @@ class MealDbService {
     return maps.map((m) => MealEntry.fromMap(m)).toList();
   }
 
-  /// Get daily totals (calories, protein, carbs, fat, fiber) for a specific day.
   Future<Map<String, double>> getDayTotals(DateTime date) async {
     final meals = await getMealsForDay(date);
     double cal = 0, pro = 0, carb = 0, fat = 0, fib = 0;
@@ -156,7 +151,6 @@ class MealDbService {
     };
   }
 
-  /// Get all meals (all time) ordered by newest first.
   Future<List<MealEntry>> getAllMeals() async {
     final db = await _getDatabase();
     if (db == null) {
@@ -169,7 +163,6 @@ class MealDbService {
     return maps.map((m) => MealEntry.fromMap(m)).toList();
   }
 
-  /// Delete a meal entry by ID.
   Future<void> deleteMeal(int id) async {
     final db = await _getDatabase();
     if (db == null) {

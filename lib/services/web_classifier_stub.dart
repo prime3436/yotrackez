@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-/// A prediction from TF.js MobileNet.
 class WebPrediction {
   final String className;
   final double probability;
@@ -14,7 +13,6 @@ class WebPrediction {
   String toString() => '$className (${(probability * 100).toStringAsFixed(1)}%)';
 }
 
-/// Stub implementation for non-web platforms.
 class WebClassifierService {
   bool get isReady => false;
 

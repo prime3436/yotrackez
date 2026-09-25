@@ -4,15 +4,6 @@ import '../models/user_settings.dart';
 import '../theme/app_theme.dart';
 import '../main.dart';
 
-/// First-launch multi-step onboarding.
-///
-/// Steps:
-///   0 — Welcome
-///   1 — Name
-///   2 — Gender
-///   3 — Age / Height / Weight
-///   4 — Fitness goal
-///   5 — Calorie target (auto-suggested, user can tweak)
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -25,14 +16,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _step = 0;
   bool _saving = false;
 
-  // Form values
   final _nameCtrl = TextEditingController();
   String _gender = 'male';
   int _age = 25;
   double _heightCm = 170;
   double _weightKg = 70;
   String _goal = 'maintain';
-  late int _calorieTarget; // filled at step 4 from suggestion
+  late int _calorieTarget;
 
   @override
   void initState() {
@@ -58,7 +48,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } else if (_step == 3) {
       _goTo(4);
     } else if (_step == 4) {
-      // Compute suggestion before showing step 5
+
       _computeCalorieSuggestion();
       _goTo(5);
     } else {
@@ -67,10 +57,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _computeCalorieSuggestion() {
-    // Mifflin-St Jeor BMR
+
     final base = 10 * _weightKg + 6.25 * _heightCm - 5 * _age;
     final bmr = _gender == 'female' ? base - 161 : base + 5;
-    double target = bmr * 1.375; // light activity
+    double target = bmr * 1.375;
     if (_goal == 'lose') target -= 500;
     if (_goal == 'gain') target += 400;
     setState(() => _calorieTarget = target.clamp(1200, 4500).round());
@@ -119,10 +109,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── Progress bar ──
+
               _StepProgressBar(step: _step, total: 6),
 
-              // ── Pages ──
               Expanded(
                 child: PageView(
                   controller: _page,
@@ -164,10 +153,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-// Step 0 — Welcome
-// ═══════════════════════════════════════════════════════════
 
 class _WelcomePage extends StatelessWidget {
   final VoidCallback onNext;
@@ -219,10 +204,6 @@ class _WelcomePage extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-// Step 1 — Name
-// ═══════════════════════════════════════════════════════════
 
 class _NamePage extends StatelessWidget {
   final TextEditingController controller;
@@ -282,10 +263,6 @@ class _NamePage extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-// Step 2 — Gender
-// ═══════════════════════════════════════════════════════════
 
 class _GenderPage extends StatelessWidget {
   final String selected;
@@ -362,10 +339,6 @@ class _GenderCard extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-// Step 3 — Age / Height / Weight
-// ═══════════════════════════════════════════════════════════
 
 class _BodyStatsPage extends StatelessWidget {
   final int age;
@@ -474,10 +447,6 @@ class _SliderStat extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Step 4 — Fitness Goal
-// ═══════════════════════════════════════════════════════════
-
 class _GoalPage extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
@@ -555,10 +524,6 @@ class _GoalPage extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// Step 5 — Calorie Target
-// ═══════════════════════════════════════════════════════════
-
 class _CaloriePage extends StatelessWidget {
   final int calories;
   final ValueChanged<int> onChanged;
@@ -585,7 +550,6 @@ class _CaloriePage extends StatelessWidget {
               .animate().fadeIn(delay: 100.ms),
           const SizedBox(height: 40),
 
-          // Big calorie display
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 28),
@@ -610,7 +574,6 @@ class _CaloriePage extends StatelessWidget {
 
           const SizedBox(height: 28),
 
-          // Tweak slider
           Slider(
             value: calories.toDouble().clamp(1200, 4000),
             min: 1200, max: 4000, divisions: 280,
@@ -636,10 +599,6 @@ class _CaloriePage extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════
-// Shared helpers
-// ═══════════════════════════════════════════════════════════
 
 class _StepProgressBar extends StatelessWidget {
   final int step, total;

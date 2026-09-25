@@ -44,7 +44,6 @@ class _ResultScreenState extends State<ResultScreen> {
       timestamp: now,
     );
 
-    // Capture context-dependent objects before the async gap
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -62,10 +61,8 @@ class _ResultScreenState extends State<ResultScreen> {
 
     if (!mounted) return;
 
-    // Gamified feedback: flying food -> avatar eats -> power-up sound ->
-    // possible avatar state change, all in the animated overlay.
     await MealAddedAvatarOverlay.show(
-      // ignore: use_build_context_synchronously
+
       context,
       foodName: data.foodName,
       calories: data.calories,
@@ -81,7 +78,7 @@ class _ResultScreenState extends State<ResultScreen> {
         decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: CustomScrollView(
           slivers: [
-            // Hero image app bar (only if we have an image)
+
             SliverAppBar(
               expandedHeight: widget.imageBytes != null ? 280 : 80,
               pinned: true,
@@ -126,7 +123,6 @@ class _ResultScreenState extends State<ResultScreen> {
                   : null,
             ),
 
-            // Content
             SliverToBoxAdapter(
               child: _buildResultContent(context),
             ),
@@ -143,7 +139,7 @@ class _ResultScreenState extends State<ResultScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Food name & serving
+
           Center(
             child: Column(
               children: [
@@ -176,7 +172,6 @@ class _ResultScreenState extends State<ResultScreen> {
 
           const SizedBox(height: 24),
 
-          // Calorie badge
           Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
@@ -231,7 +226,6 @@ class _ResultScreenState extends State<ResultScreen> {
 
           const SizedBox(height: 28),
 
-          // Macros
           Text(
             'Macronutrients',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 18),
@@ -269,15 +263,11 @@ class _ResultScreenState extends State<ResultScreen> {
 
           const SizedBox(height: 28),
 
-          // ═══════════════════════════════════════════
-          // INGREDIENT BREAKDOWN (new!)
-          // ═══════════════════════════════════════════
           if (data.hasIngredients) ...[
             _buildIngredientBreakdown(context, data),
             const SizedBox(height: 28),
           ],
 
-          // Details
           Text(
             'Other Nutrients',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 18),
@@ -485,12 +475,11 @@ class _ResultScreenState extends State<ResultScreen> {
     );
   }
 
-  /// Builds the ingredient breakdown section for complex dishes.
   Widget _buildIngredientBreakdown(BuildContext context, NutritionData data) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section header
+
         Row(
           children: [
             Container(
@@ -528,7 +517,6 @@ class _ResultScreenState extends State<ResultScreen> {
 
         const SizedBox(height: 16),
 
-        // Ingredient cards
         ...data.ingredients.asMap().entries.map((entry) {
           final index = entry.key;
           final ingredient = entry.value;
@@ -545,7 +533,6 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 }
 
-/// Card showing a single ingredient's nutrition.
 class _IngredientCard extends StatefulWidget {
   final IngredientData ingredient;
   final int index;
@@ -587,10 +574,10 @@ class _IngredientCardState extends State<_IngredientCard> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Header row
+
                 Row(
                   children: [
-                    // Index badge
+
                     Container(
                       width: 28,
                       height: 28,
@@ -610,7 +597,7 @@ class _IngredientCardState extends State<_IngredientCard> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Name + amount
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,7 +619,7 @@ class _IngredientCardState extends State<_IngredientCard> {
                         ],
                       ),
                     ),
-                    // Calorie chip
+
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -649,7 +636,7 @@ class _IngredientCardState extends State<_IngredientCard> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Expand icon
+
                     AnimatedRotation(
                       turns: _expanded ? 0.5 : 0,
                       duration: const Duration(milliseconds: 200),
@@ -662,7 +649,6 @@ class _IngredientCardState extends State<_IngredientCard> {
                   ],
                 ),
 
-                // Expanded nutrition bars
                 AnimatedCrossFade(
                   firstChild: const SizedBox.shrink(),
                   secondChild: Padding(
@@ -713,7 +699,6 @@ class _IngredientCardState extends State<_IngredientCard> {
   }
 }
 
-/// A horizontal bar showing a nutrient value with color fill.
 class _NutrientBar extends StatelessWidget {
   final String label;
   final double value;
@@ -801,8 +786,7 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Flutter forbids borderRadius with non-uniform border colors.
-    // Fix: ClipRRect clips the Stack; left accent is a Positioned child.
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ClipRRect(

@@ -6,11 +6,6 @@ import '../models/nutrition_data.dart';
 import '../services/open_food_facts_service.dart';
 import '../theme/app_theme.dart';
 
-/// Full-screen barcode scanner styled for YOTRACKEZ.
-///
-/// Pops with a [NutritionData] on success (portion already applied),
-/// or null if the user cancels — so the caller can drop it straight into
-/// the existing ResultScreen / meal-log flow without any conversion.
 class BarcodeScannerScreen extends StatefulWidget {
   const BarcodeScannerScreen({super.key});
 
@@ -59,8 +54,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     }
   }
 
-  /// Shows a bottom sheet letting the user confirm / adjust grams,
-  /// then pops the screen with a [NutritionData] ready for ResultScreen.
   Future<void> _showPortionSheet(ScannedProduct product) async {
     final defaultGrams = product.packageQuantityGrams ?? 100.0;
     final controller = TextEditingController(
@@ -80,7 +73,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       final grams = double.tryParse(controller.text.trim()) ?? defaultGrams;
       final data = product.forPortion(grams);
 
-      // Convert MealLogEntryData → NutritionData so it flows into ResultScreen
       Navigator.of(context).pop(NutritionData(
         foodName: product.brand != null
             ? '${product.brand} ${data.productName}'
@@ -99,7 +91,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
         healthTip: 'Scanned from barcode — exact values from Open Food Facts.',
       ));
     } else {
-      // User dismissed — let them scan again
+
       setState(() { _lookingUp = false; _lastCode = null; });
     }
   }
@@ -112,13 +104,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       backgroundColor: AppTheme.background,
       body: Stack(
         children: [
-          // ── Camera feed ──
+
           MobileScanner(controller: _ctrl, onDetect: _onDetect),
 
-          // ── Dark vignette ──
           _Vignette(),
 
-          // ── Scan-box reticle ──
           Center(
             child: Container(
               width: 270,
@@ -134,7 +124,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
              .scaleXY(begin: 1.02, end: 1.0, duration: 1200.ms),
           ),
 
-          // ── Top bar ──
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -158,7 +147,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ),
           ),
 
-          // ── Instruction label ──
           Positioned(
             bottom: 120,
             left: 0, right: 0,
@@ -178,7 +166,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ),
           ),
 
-          // ── Loading overlay ──
           if (_lookingUp)
             Container(
               color: Colors.black.withValues(alpha: 0.65),
@@ -193,7 +180,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             ).animate().fadeIn(duration: 200.ms),
 
-          // ── Error card ──
           if (_error != null)
             Positioned(
               bottom: 40, left: 20, right: 20,
@@ -243,7 +229,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 }
 
-// ── Portion-size bottom sheet ─────────────────────────────────────────────────
 class _PortionSheet extends StatelessWidget {
   final ScannedProduct product;
   final TextEditingController controller;
@@ -262,13 +247,12 @@ class _PortionSheet extends StatelessWidget {
         ),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Handle
+
           Center(child: Container(width: 40, height: 4,
               decoration: BoxDecoration(color: AppTheme.textSecondary.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 20),
 
-          // Product info
           if (product.brand != null)
             Text(product.brand!, style: TextStyle(color: AppTheme.primary, fontSize: 11,
                 fontWeight: FontWeight.w700, letterSpacing: 1)),
@@ -281,7 +265,6 @@ class _PortionSheet extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Per-100g macro summary
           _MacroRow(product: product),
 
           const SizedBox(height: 20),
@@ -289,7 +272,6 @@ class _PortionSheet extends StatelessWidget {
               style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
 
-          // Grams input
           TextField(
             controller: controller,
             keyboardType: TextInputType.number,
@@ -386,7 +368,6 @@ class _NutriScoreBadge extends StatelessWidget {
   }
 }
 
-// ── Camera vignette ───────────────────────────────────────────────────────────
 class _Vignette extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

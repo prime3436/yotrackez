@@ -4,9 +4,6 @@ import subprocess
 desktop = os.path.expanduser(r"~\Desktop")
 edge_path = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 
-# ==========================================
-# 1. Q20: Technical Documentation HTML
-# ==========================================
 tech_doc_html = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,9 +127,6 @@ tech_doc_html = """<!DOCTYPE html>
 </html>
 """
 
-# ==========================================
-# 2. Q21: ER Diagram & Data Model HTML
-# ==========================================
 er_doc_html = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -298,7 +292,6 @@ er_doc_html = """<!DOCTYPE html>
 </html>
 """
 
-# Write HTML files
 tech_doc_path = os.path.join(desktop, "YOTRACKEZ_Technical_Documentation.html")
 er_doc_path = os.path.join(desktop, "YOTRACKEZ_ER_Diagram.html")
 
@@ -308,7 +301,6 @@ with open(tech_doc_path, "w", encoding="utf-8") as f:
 with open(er_doc_path, "w", encoding="utf-8") as f:
     f.write(er_doc_html)
 
-# Compile to PDF using Edge
 pdf_tech = os.path.join(desktop, "YOTRACKEZ_Technical_Documentation.pdf")
 pdf_er = os.path.join(desktop, "YOTRACKEZ_ER_Diagram.pdf")
 

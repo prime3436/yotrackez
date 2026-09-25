@@ -26,7 +26,6 @@ import sys
 import json
 import pathlib
 
-# Ensure we're in the right directory
 SCRIPT_DIR = pathlib.Path(__file__).parent
 ASSETS_DIR = SCRIPT_DIR / "assets"
 MODEL_DIR = ASSETS_DIR / "model"
@@ -35,10 +34,9 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_TFLITE = MODEL_DIR / "food_classifier.tflite"
 LABELS_FILE = MODEL_DIR / "food_labels.txt"
 
-# Image dimensions expected by MobileNetV2
 IMG_SIZE = 224
 BATCH_SIZE = 32
-EPOCHS = 10  # Increase for better accuracy (15-20 recommended)
+EPOCHS = 10
 
 
 def load_labels():
@@ -54,7 +52,6 @@ def main():
     print("  YOTRACKEZ — Food-101 Model Trainer")
     print("=" * 60)
 
-    # Check dependencies
     try:
         import tensorflow as tf
         import tensorflow_datasets as tfds
@@ -69,14 +66,11 @@ def main():
     num_classes = len(labels)
     print(f"[INFO] Training for {num_classes} food classes")
 
-    # ─── 1. Load Food-101 Dataset ───────────────────────────────
     print("\n[STEP 1/4] Loading Food-101 dataset...")
 
-    # Map Food-101 dataset labels to our label order
     ds_info = tfds.builder("food101").info
     tfds_labels = ds_info.features["label"].names
 
-    # Create label mapping: tfds label index -> our label index
     label_map = {}
     for i, tfds_label in enumerate(tfds_labels):
         if tfds_label in labels:
@@ -91,7 +85,6 @@ def main():
         label = example["label"]
         return image, label
 
-    # Load train and validation splits
     train_ds = tfds.load("food101", split="train", as_supervised=False)
     val_ds = tfds.load("food101", split="validation", as_supervised=False)
 
@@ -110,17 +103,14 @@ def main():
         .prefetch(tf.data.AUTOTUNE)
     )
 
-    # ─── 2. Build Model ────────────────────────────────────────
     print("\n[STEP 2/4] Building MobileNetV2 model...")
 
-    # Use MobileNetV2 as feature extractor (pretrained on ImageNet)
     base_model = tf.keras.applications.MobileNetV2(
         input_shape=(IMG_SIZE, IMG_SIZE, 3),
         include_top=False,
         weights="imagenet",
     )
 
-    # Freeze base model initially
     base_model.trainable = False
 
     model = tf.keras.Sequential([
@@ -140,10 +130,8 @@ def main():
 
     model.summary()
 
-    # ─── 3. Train ───────────────────────────────────────────────
     print(f"\n[STEP 3/4] Training for {EPOCHS} epochs...")
 
-    # Phase 1: Train top layers (feature extractor frozen)
     history = model.fit(
         train_ds,
         validation_data=val_ds,
@@ -155,7 +143,6 @@ def main():
         ],
     )
 
-    # Phase 2: Fine-tune last 30 layers of base model
     print("\n[INFO] Fine-tuning base model layers...")
     base_model.trainable = True
     for layer in base_model.layers[:-30]:
@@ -179,24 +166,18 @@ def main():
         ],
     )
 
-    # Print final accuracy
     val_loss, val_acc = model.evaluate(val_ds)
     print(f"\n[RESULT] Validation accuracy: {val_acc:.1%}")
 
-    # ─── 4. Convert to TFLite ──────────────────────────────────
     print("\n[STEP 4/4] Converting to TFLite...")
 
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
 
-    # Apply optimizations to reduce model size
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
 
-    # Optional: Full integer quantization for even smaller model
-    # converter.target_spec.supported_types = [tf.float16]
 
     tflite_model = converter.convert()
 
-    # Save the model
     with open(OUTPUT_TFLITE, "wb") as f:
         f.write(tflite_model)
 

@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Tracks how many consecutive days the user has logged at least one meal.
-/// Called from MealDbService whenever a meal is saved.
 class StreakService extends ChangeNotifier {
   static final StreakService instance = StreakService._();
   StreakService._();
@@ -21,7 +19,6 @@ class StreakService extends ChangeNotifier {
   bool get loggedToday => _loggedToday;
   bool get loaded => _loaded;
 
-  /// Fire this once at app startup.
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _streak = prefs.getInt(_keyStreak) ?? 0;
@@ -33,7 +30,7 @@ class StreakService extends ChangeNotifier {
     if (lastLogged == today) {
       _loggedToday = true;
     } else if (lastLogged != yesterday && lastLogged.isNotEmpty) {
-      // Streak broken — gap of more than 1 day
+
       _streak = 0;
       await prefs.setInt(_keyStreak, 0);
     }
@@ -41,21 +38,18 @@ class StreakService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Call this whenever a meal is successfully saved.
-  /// Checks whether today was already logged, maintains consecutive streaks across days,
-  /// and persists current and longest streak records.
   Future<void> recordMeal() async {
     final prefs = await SharedPreferences.getInstance();
     final today = _todayKey();
     final lastLogged = prefs.getString(_keyLastLogged) ?? '';
 
-    if (lastLogged == today) return; // already counted today
+    if (lastLogged == today) return;
 
     final yesterday = _dayKey(DateTime.now().subtract(const Duration(days: 1)));
     if (lastLogged == yesterday || lastLogged.isEmpty) {
       _streak++;
     } else {
-      // Gap — restart streak
+
       _streak = 1;
     }
 

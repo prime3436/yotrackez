@@ -4,16 +4,6 @@ import 'package:http/http.dart' as http;
 import '../models/nutrition_data.dart';
 import 'image_preprocessor.dart';
 
-
-/// Gemini Vision-based food recognition service.
-///
-/// Sends a food image to the Gemini API and gets back:
-/// - Food identification
-/// - Full ingredient breakdown with per-ingredient nutrition
-/// - Total nutrition facts
-///
-/// This is a SEPARATE service from the MobileNet classifier.
-/// It requires a Gemini API key to function.
 class GeminiFoodService {
   static GeminiFoodService? _instance;
 
@@ -24,19 +14,10 @@ class GeminiFoodService {
     return _instance!;
   }
 
-  /// Whether the service is available (Backend proxy is available by default, or user key is set).
   bool get isAvailable => true;
 
-  /// Analyze a food image using Gemini Vision.
-  ///
-  /// Runs the full preprocessing pipeline (resize, orient, normalise) before
-  /// sending to the Gemini API, so the model receives a clean, well-exposed
-  /// image regardless of camera conditions.
-  ///
-  /// Returns a NutritionData object with full ingredient breakdown and
-  /// portion size estimate. Throws on error so the caller can show the message.
   Future<NutritionData?> analyzeFood(Uint8List imageBytes) async {
-    // ── 1. Image preprocessing ─────────────────────────────────────────────
+
     Uint8List processedBytes;
     try {
       final preprocessed = await ImagePreprocessor.process(imageBytes);
@@ -50,10 +31,8 @@ class GeminiFoodService {
     const bool useProxy = true;
     debugPrint('[GeminiFood] Analyzing food image (${processedBytes.length} bytes, useProxy=$useProxy)...');
 
-    // Convert image to base64
     final base64Image = base64Encode(processedBytes);
 
-    // Build the request
     final requestBody = {
       'contents': [
         {
@@ -76,7 +55,6 @@ class GeminiFoodService {
       }
     };
 
-    // Make the API call
     final http.Response response;
     const maxRetries = 3;
 
@@ -100,7 +78,6 @@ class GeminiFoodService {
         continue;
       }
 
-      // Retry on Rate limit (429) or Server/Overload errors (500, 502, 503, 504)
       if (lastResponse.statusCode == 429 || lastResponse.statusCode >= 500) {
         final waitSecs = (attempt + 1) * 2;
         debugPrint('[GeminiFood] Server status ${lastResponse.statusCode}. Waiting ${waitSecs}s, retrying...');
@@ -115,7 +92,6 @@ class GeminiFoodService {
 
     response = lastResponse!;
 
-    // Check for API errors
     if (response.statusCode == 400) {
       final body = jsonDecode(response.body);
       final msg = body['error']?['message'] ?? 'Bad request';
@@ -128,7 +104,6 @@ class GeminiFoodService {
       throw Exception('API returned status ${response.statusCode}');
     }
 
-    // Parse the Gemini response
     final responseJson = jsonDecode(response.body);
     final candidates = responseJson['candidates'] as List?;
     if (candidates == null || candidates.isEmpty) {
@@ -142,11 +117,9 @@ class GeminiFoodService {
 
     debugPrint('[GeminiFood] Got response: ${text.substring(0, text.length.clamp(0, 300))}...');
 
-    // Parse the JSON from Gemini's response
     try {
       final foodJson = jsonDecode(text) as Map<String, dynamic>;
 
-      // Check for "not food" response
       if (foodJson['error'] == true || foodJson['food_name'] == 'Not Food') {
         return null;
       }
@@ -159,13 +132,6 @@ class GeminiFoodService {
     }
   }
 
-  /// Build the prompt that tells Gemini what to return.
-  ///
-  /// Includes explicit instructions for:
-  ///   - Food detection (name, category)
-  ///   - Portion size estimation (volume/area/depth heuristics)
-  ///   - Per-ingredient nutrition breakdown for complex dishes
-  ///   - Full macro & micronutrient data
   String _buildPrompt() {
     return '''You are an expert food nutritionist and computer vision system.
 Analyze this food image and return a detailed JSON nutrition report.
@@ -215,7 +181,6 @@ If the image does NOT contain food, return:
 {"food_name": "Not Food", "error": true}''';
   }
 
-  /// Check if a Gemini response indicates "not food".
   static bool isNotFood(NutritionData? data) {
     if (data == null) return true;
     return data.foodName == 'Not Food';

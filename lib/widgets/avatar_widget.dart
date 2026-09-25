@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/user_settings.dart';
 import '../theme/app_theme.dart';
 
-/// Animated avatar widget that changes image, size, and glow based on net calories.
-/// Uses 5 avatar states: very_fit, fit, normal, chubby, overweight.
-/// Rendered from 3D Cyberpunk Gaming Character Art in assets/avatars/.
 class AvatarWidget extends StatelessWidget {
   final String avatarState;
   final String gender;
@@ -28,7 +25,7 @@ class AvatarWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Avatar circle container with glow & image crossfade
+
         AnimatedContainer(
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeOutBack,
@@ -84,7 +81,6 @@ class AvatarWidget extends StatelessWidget {
 
         const SizedBox(height: 12),
 
-        // State label
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(

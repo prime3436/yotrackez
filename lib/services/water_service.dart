@@ -1,13 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Tracks daily water intake (in glasses of 250 ml).
-/// Resets automatically at midnight using a stored date key.
 class WaterService extends ChangeNotifier {
   static final WaterService instance = WaterService._();
   WaterService._();
 
-  static const int _goal = 8; // glasses per day
+  static const int _goal = 8;
   static const String _keyGlasses = 'water_glasses';
   static const String _keyDate = 'water_date';
 
@@ -25,7 +23,7 @@ class WaterService extends ChangeNotifier {
     final today = _todayKey();
     final storedDate = prefs.getString(_keyDate) ?? '';
     if (storedDate != today) {
-      // New day — reset
+
       await prefs.setInt(_keyGlasses, 0);
       await prefs.setString(_keyDate, today);
     }
@@ -35,7 +33,7 @@ class WaterService extends ChangeNotifier {
   }
 
   Future<void> addGlass() async {
-    if (_glasses >= _goal + 4) return; // cap at goal+4 to avoid accidents
+    if (_glasses >= _goal + 4) return;
     _glasses++;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();

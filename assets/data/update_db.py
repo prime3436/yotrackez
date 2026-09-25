@@ -1,15 +1,10 @@
 import json
 
-# Load existing database
 with open(r'C:\Users\HP\.gemini\antigravity\scratch\nutri_snap\assets\data\nutrition_db.json', 'r', encoding='utf-8') as f:
     db = json.load(f)
 
-# Build lookup by id
 lookup = {item['id']: item for item in db}
 
-# ============================================================
-# STEP 1: Add ingredients to existing complex dishes (top 18)
-# ============================================================
 
 ingredients_for_existing = {
     "chicken_curry": [
@@ -162,9 +157,6 @@ for food_id, ingredients in ingredients_for_existing.items():
     if food_id in lookup:
         lookup[food_id]['ingredients'] = ingredients
 
-# ============================================================
-# STEP 2: Add NEW Indian dishes with ingredient breakdowns
-# ============================================================
 
 new_indian_dishes = [
     {
@@ -583,9 +575,6 @@ new_indian_dishes = [
     }
 ]
 
-# ============================================================
-# STEP 3: Add NEW standalone ingredients (no ingredients array)
-# ============================================================
 
 new_standalone = [
     {
@@ -810,18 +799,15 @@ new_standalone = [
     }
 ]
 
-# Merge everything
 for dish in new_indian_dishes:
     db.append(dish)
 
 for item in new_standalone:
     db.append(item)
 
-# Write updated database
 with open(r'C:\Users\HP\.gemini\antigravity\scratch\nutri_snap\assets\data\nutrition_db.json', 'w', encoding='utf-8') as f:
     json.dump(db, f, indent=2, ensure_ascii=False)
 
-# Count and verify
 existing_ids = set()
 for item in db:
     existing_ids.add(item['id'])

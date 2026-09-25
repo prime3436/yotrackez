@@ -1,4 +1,4 @@
-/// Represents a single meal entry tracked by the user.
+
 class MealEntry {
   final int? id;
   final String foodName;
@@ -7,7 +7,7 @@ class MealEntry {
   final double carbs;
   final double fat;
   final double fiber;
-  final String mealType; // breakfast, lunch, snack, dinner
+  final String mealType;
   final DateTime timestamp;
   final String? imagePath;
 
@@ -50,7 +50,6 @@ class MealEntry {
     );
   }
 
-  /// Auto-assign meal type based on hour of day.
   static String getMealType(DateTime time) {
     final hour = time.hour;
     if (hour >= 6 && hour < 11) return 'breakfast';

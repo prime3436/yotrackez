@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-/// Generates a comprehensive nutrition database for Food-101 categories.
-/// Data sourced from USDA FoodData Central (approximate per standard serving).
 void main() {
   final foods = <Map<String, dynamic>>[
     _f('apple_pie', 'Apple Pie', '1 slice (125g)', 296, 43, 2.4, 14, 1.4, 23, 181, 0, [_v('Vitamin A', 2), _v('Vitamin C', 3), _v('Iron', 6), _v('Calcium', 1)], 'High in sugar — enjoy as an occasional treat.'),
@@ -111,9 +109,9 @@ void main() {
   final file = File('assets/data/nutrition_db.json');
   file.parent.createSync(recursive: true);
   file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(foods));
-  // ignore: avoid_print
+
   print('✓ Generated nutrition_db.json with ${foods.length} foods');
-  // ignore: avoid_print
+
   print('  File size: ${file.lengthSync()} bytes');
 }
 

@@ -3,8 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Reads step count from phone's pedometer sensor and calculates calories burned.
-/// Formula: calories burned ≈ steps × 0.04 (about 40 cal per 1000 steps).
 class StepCounterService {
   static StepCounterService? _instance;
   static StepCounterService get instance {
@@ -19,7 +17,7 @@ class StepCounterService {
 
   StreamSubscription<StepCount>? _stepSub;
   int _totalStepsSinceLastBoot = 0;
-  int _midnightSteps = 0; // Steps at midnight (to calculate daily)
+  int _midnightSteps = 0;
   int _todaySteps = 0;
 
   final ValueNotifier<int> stepsNotifier = ValueNotifier(0);
@@ -28,7 +26,6 @@ class StepCounterService {
   int get todaySteps => _todaySteps;
   double get caloriesBurned => _todaySteps * 0.04;
 
-  /// Start listening to the pedometer.
   Future<void> start() async {
     await _loadMidnightSteps();
 
@@ -63,14 +60,13 @@ class StepCounterService {
     debugPrint('[Steps] Pedometer error: $error');
   }
 
-  /// Check if the day has changed — if so, reset midnight baseline.
   Future<void> _checkDayReset() async {
     final prefs = await SharedPreferences.getInstance();
     final lastResetDate = prefs.getString(_lastResetDateKey) ?? '';
     final today = _todayDateStr();
 
     if (lastResetDate != today) {
-      // Day changed — reset midnight baseline to current total
+
       _midnightSteps = _totalStepsSinceLastBoot;
       await prefs.setInt(_midnightStepsKey, _midnightSteps);
       await prefs.setString(_lastResetDateKey, today);
@@ -83,7 +79,7 @@ class StepCounterService {
     _midnightSteps = prefs.getInt(_midnightStepsKey) ?? 0;
     final lastDate = prefs.getString(_lastResetDateKey) ?? '';
     if (lastDate != _todayDateStr()) {
-      // Will be reset on first step event
+
       debugPrint('[Steps] Midnight steps loaded: $_midnightSteps (pending day-reset)');
     }
   }

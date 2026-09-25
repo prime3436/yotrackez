@@ -2,89 +2,68 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // ─── Electric Frost · Liquid Chrome · Solar Lava · Ghost Teal ────────────
-  //
-  // Primary:       Periwinkle Electric   #7B6FFF  – violet-blue energy
-  // Primary Dark:  Deep Periwinkle       #5548D9
-  // Accent:        Ghost Teal            #2AFFDD  – spectral highlight
-  // Lava:          Solar Lava            #FF4D1C  – molten call-to-action
-  // Chrome:        Liquid Chrome         #C8D6E5  – metallic text / mid
-  // Frost:         Electric Frost        #E0F7FF  – icy white-blue shimmer
-  //
-  // Background:    Void Veil             #07080F  – deepest dark
-  // Surface:       Ghost Surface         #0D0E1A  – card layer
-  // Surface Light: Veil Light            #13152A
 
-  static const Color primary        = Color(0xFF7B6FFF); // Periwinkle Electric
-  static const Color primaryDark    = Color(0xFF5548D9); // Deep Periwinkle
-  static const Color accent         = Color(0xFF2AFFDD); // Ghost Teal
-  static const Color lava           = Color(0xFFFF4D1C); // Solar Lava
-  static const Color chrome         = Color(0xFFC8D6E5); // Liquid Chrome
-  static const Color frost          = Color(0xFFE0F7FF); // Electric Frost
+  static const Color primary        = Color(0xFF7B6FFF);
+  static const Color primaryDark    = Color(0xFF5548D9);
+  static const Color accent         = Color(0xFF2AFFDD);
+  static const Color lava           = Color(0xFFFF4D1C);
+  static const Color chrome         = Color(0xFFC8D6E5);
+  static const Color frost          = Color(0xFFE0F7FF);
 
-  static const Color surface        = Color(0xFF0D0E1A); // Ghost Surface
-  static const Color surfaceLight   = Color(0xFF13152A); // Veil Light
-  static const Color card           = Color(0xFF10111F); // Void Card
-  static const Color background     = Color(0xFF07080F); // Void Veil
+  static const Color surface        = Color(0xFF0D0E1A);
+  static const Color surfaceLight   = Color(0xFF13152A);
+  static const Color card           = Color(0xFF10111F);
+  static const Color background     = Color(0xFF07080F);
 
-  static const Color textPrimary    = Color(0xFFF0F4FF); // Frost White
-  static const Color textSecondary  = Color(0xFF7A82A8); // Chrome Zinc
+  static const Color textPrimary    = Color(0xFFF0F4FF);
+  static const Color textSecondary  = Color(0xFF7A82A8);
 
-  static const Color error          = Color(0xFFFF4D1C); // Solar Lava (same for urgency)
+  static const Color error          = Color(0xFFFF4D1C);
 
-  // Macro colors — each named for its energy character
-  static const Color calorieOrange  = Color(0xFFFF4D1C); // Solar Lava
-  static const Color carbsBlue      = Color(0xFF7B6FFF); // Periwinkle
-  static const Color proteinRed     = Color(0xFFFF2D7A); // Plasma Pink
-  static const Color fatYellow      = Color(0xFFFFBD39); // Chrome Gold
-  static const Color fiberGreen     = Color(0xFF2AFFDD); // Ghost Teal
-
-  // ─── Gradients ────────────────────────────────────────────────────────────
+  static const Color calorieOrange  = Color(0xFFFF4D1C);
+  static const Color carbsBlue      = Color(0xFF7B6FFF);
+  static const Color proteinRed     = Color(0xFFFF2D7A);
+  static const Color fatYellow      = Color(0xFFFFBD39);
+  static const Color fiberGreen     = Color(0xFF2AFFDD);
 
   static const LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
       background,
-      Color(0xFF0A0B18), // slight periwinkle tint
+      Color(0xFF0A0B18),
       background,
     ],
   );
 
-  /// Hero gradient — periwinkle → ghost teal (used on buttons, banners)
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [primary, accent],
   );
 
-  /// Lava gradient — solar lava → plasma pink (used for alerts, meal logs)
   static const LinearGradient lavaGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [lava, Color(0xFFFF2D7A)],
   );
 
-  /// Card shimmer background
   static const LinearGradient cardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFF161828), Color(0xFF0D0E1A)],
   );
 
-  /// Chrome gradient — for HUD elements, stats bars
   static const LinearGradient chromeGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [chrome, frost],
   );
 
-  // ─── Border Radius ────────────────────────────────────────────────────────
   static final BorderRadius cardRadius   = BorderRadius.circular(24);
   static final BorderRadius buttonRadius = BorderRadius.circular(100);
   static final BorderRadius chipRadius   = BorderRadius.circular(100);
 
-  // ─── Box Shadows ──────────────────────────────────────────────────────────
   static List<BoxShadow> cardShadow = [
     BoxShadow(
       color: Colors.black.withValues(alpha: 0.55),
@@ -111,7 +90,6 @@ class AppTheme {
     ),
   ];
 
-  // ─── Glassmorphism ────────────────────────────────────────────────────────
   static BoxDecoration glassCard({Color? color}) => BoxDecoration(
     color: (color ?? card).withValues(alpha: 0.45),
     borderRadius: cardRadius,
@@ -122,7 +100,6 @@ class AppTheme {
     boxShadow: cardShadow,
   );
 
-  // ─── ThemeData ────────────────────────────────────────────────────────────
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,

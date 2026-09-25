@@ -1,37 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
-/// Preprocessing pipeline for food images before AI analysis.
-///
-/// Pipeline stages:
-///   1. Decode raw bytes → img.Image
-///   2. Auto-orient (EXIF rotation)
-///   3. Resize to max 640px on longest side (preserves aspect ratio)
-///   4. Normalize brightness / contrast (basic histogram stretch)
-///   5. Re-encode as JPEG at target quality
-///   6. Return [PreprocessedImage] with metadata
 class ImagePreprocessor {
   static const int _maxDimension = 640;
   static const int _defaultQuality = 82;
 
-  /// Preprocess [rawBytes] for AI ingestion.
-  ///
-  /// Throws if the bytes cannot be decoded as an image.
   static Future<PreprocessedImage> process(Uint8List rawBytes) async {
     return compute(_processInIsolate, _ProcessArgs(rawBytes, _maxDimension, _defaultQuality));
   }
 
-  /// Internal entry point executed in an isolate.
   static PreprocessedImage _processInIsolate(_ProcessArgs args) {
     final decoded = img.decodeImage(args.rawBytes);
     if (decoded == null) {
       throw Exception('ImagePreprocessor: could not decode image bytes.');
     }
 
-    // 1. Auto-orient (handles EXIF rotation from camera)
     final oriented = img.bakeOrientation(decoded);
 
-    // 2. Resize — keep aspect ratio, cap longest side at maxDimension
     img.Image resized;
     final w = oriented.width;
     final h = oriented.height;
@@ -47,10 +32,8 @@ class ImagePreprocessor {
           interpolation: img.Interpolation.linear);
     }
 
-    // 3. Normalize brightness — gentle contrast enhancement
     final normalized = _normalizeContrast(resized);
 
-    // 4. Encode as JPEG
     final outputBytes = img.encodeJpg(normalized, quality: args.quality);
 
     return PreprocessedImage(
@@ -64,11 +47,8 @@ class ImagePreprocessor {
     );
   }
 
-  /// Gently stretch contrast by clipping the bottom 1% and top 1% of
-  /// per-channel luminance values, then remapping to [0, 255].
-  /// This improves recognition accuracy on under/over-exposed shots.
   static img.Image _normalizeContrast(img.Image image) {
-    // Collect luminance histogram (Y = 0.299R + 0.587G + 0.114B)
+
     final hist = List<int>.filled(256, 0);
     for (int y = 0; y < image.height; y++) {
       for (int x = 0; x < image.width; x++) {
@@ -79,7 +59,7 @@ class ImagePreprocessor {
     }
 
     final total = image.width * image.height;
-    final clip = (total * 0.01).round(); // 1% clip
+    final clip = (total * 0.01).round();
 
     int low = 0, high = 255;
     int cumL = 0, cumH = 0;
@@ -92,7 +72,7 @@ class ImagePreprocessor {
       if (cumH >= clip) { high = i; break; }
     }
 
-    if (high <= low) return image; // already well-exposed
+    if (high <= low) return image;
 
     final range = (high - low).toDouble();
 
@@ -117,7 +97,6 @@ class _ProcessArgs {
   const _ProcessArgs(this.rawBytes, this.maxDimension, this.quality);
 }
 
-/// Result of image preprocessing with metadata for debugging.
 class PreprocessedImage {
   final Uint8List bytes;
   final int originalWidth;

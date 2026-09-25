@@ -8,10 +8,6 @@ import '../services/web_classifier_service.dart';
 import '../theme/app_theme.dart';
 import 'result_screen.dart';
 
-
-/// Screen that lets the user search and select food from the database.
-/// When an image is provided and running on web, uses TensorFlow.js
-/// MobileNet for automatic food identification.
 class FoodSearchScreen extends StatefulWidget {
   final Uint8List? imageBytes;
 
@@ -38,18 +34,17 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   Future<void> _initialize() async {
-    // Load nutrition DB
+
     await NutritionDbService.instance.load();
 
     setState(() {
-      // If image provided, don't show full list — let AI or search handle it
+
       _results = widget.imageBytes != null
           ? []
           : NutritionDbService.instance.allFoods;
       _loading = false;
     });
 
-    // If we have an image, try to classify it
     if (widget.imageBytes != null) {
       _classifyImage();
     }
@@ -64,7 +59,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     });
 
     if (kIsWeb) {
-      // Use TensorFlow.js on web
+
       final loaded = await _webClassifier.load();
       if (!loaded || !mounted) {
         setState(() {
@@ -88,17 +83,14 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         return;
       }
 
-      // Map ImageNet predictions to our food database
       final mappedPredictions = predictions
           .map((p) => MapEntry(p.className, p.probability))
           .toList();
       final mapped = ImageNetFoodMapper.mapPredictions(mappedPredictions);
 
-      // Convert to suggested foods
       final suggestions = <_SuggestedFood>[];
       for (final mp in mapped) {
-        // Image flows intentionally keep the visible result list empty until
-        // the user searches, so candidates must come from the full database.
+
         final food = NutritionDbService.instance.allFoods
             .where((f) => f.id == mp.foodId)
             .firstOrNull;
@@ -111,7 +103,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         }
       }
 
-      // If we have a high-confidence match (>40%), go directly to result
       if (suggestions.isNotEmpty && suggestions.first.confidence > 0.40) {
         _selectFood(suggestions.first.food);
         return;
@@ -123,7 +114,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         _classifyStatus = null;
       });
     } else {
-      // Non-web: TFLite would go here (future)
+
       setState(() {
         _classifying = false;
         _classifyStatus = null;
@@ -141,8 +132,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   Future<void> _selectFood(FoodEntry food) async {
-    // Show a brief loading indicator while we look up nutrition
-    // (may involve network call if not in local DB)
+
     setState(() => _classifying = true);
 
     try {
@@ -205,7 +195,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header
+
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: Row(
@@ -235,19 +225,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
               const SizedBox(height: 12),
 
-              // Image preview (when image provided)
               if (widget.imageBytes != null) ...[
                 _buildImagePreview(),
                 const SizedBox(height: 12),
               ],
 
-              // AI Suggestions
               if (_classifying || _suggestions.isNotEmpty) ...[
                 _buildSuggestionsSection(),
                 const SizedBox(height: 12),
               ],
 
-              // Search bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: TextField(
@@ -293,7 +280,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
               const SizedBox(height: 8),
 
-              // Results count (only show when there are results to show)
               if (_results.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -312,7 +298,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
 
               const SizedBox(height: 8),
 
-              // Food list / Empty state
               Expanded(
                 child: _loading
                     ? const Center(
@@ -397,7 +382,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     );
   }
 
-  /// Image preview with glass overlay and status.
   Widget _buildImagePreview() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -481,7 +465,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
     ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1);
   }
 
-  /// AI suggestion chips with confidence scores.
   Widget _buildSuggestionsSection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -623,7 +606,6 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 }
 
-/// Internal model for a suggestion.
 class _SuggestedFood {
   final FoodEntry food;
   final double confidence;

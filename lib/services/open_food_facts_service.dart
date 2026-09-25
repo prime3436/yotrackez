@@ -2,26 +2,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/scanned_product.dart';
 
-/// Looks up product nutrition data by barcode via the Open Food Facts API.
-/// Free, no API key required, no rate limiting for reasonable use.
-///
-/// IMPORTANT: send a real User-Agent identifying your app — the API docs
-/// specifically ask for this, and generic/missing User-Agents are more
-/// likely to get deprioritized. Update the constant below with your real
-/// app name/version/contact before shipping.
 class OpenFoodFactsService {
   final http.Client _client;
 
-  /// Inject a client for testing (see the test file for an example using
-  /// http's MockClient). Defaults to a real client in production.
   OpenFoodFactsService({http.Client? client}) : _client = client ?? http.Client();
 
   static const _userAgent = 'YOTRACKEZ/1.0 (nutri-snap; contact: yotrackez@example.com)';
   static const _baseUrl = 'https://world.openfoodfacts.org/api/v2/product';
 
-  // Only request the fields we actually use — shrinks the response
-  // significantly (the full product object is huge, see the raw API
-  // response if you're curious just how huge).
   static const _fields = 'product_name,brands,nutriments,product_quantity,'
       'product_quantity_unit,image_url,image_front_url,nutriscore_grade,'
       'status,status_verbose,code';
@@ -41,8 +29,6 @@ class OpenFoodFactsService {
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
 
-      // status == 1 means found, status == 0 means not found — verified
-      // against a real API response, not assumed.
       final status = json['status'];
       if (status != 1) {
         return BarcodeLookupNotFound(barcode);

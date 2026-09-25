@@ -8,16 +8,11 @@ import 'health_insights_screen.dart';
 import 'result_screen.dart';
 import 'unified_scan_screen.dart';
 
-/// Fast-utility Scan & AI tab.
-/// Three entry points: Scan (unified camera), Search Food, Health Insights.
-/// All Gemini + barcode logic lives in UnifiedScanScreen.
 class ScanAiScreen extends StatelessWidget {
   const ScanAiScreen({super.key});
 
   Future<void> _openUnifiedScan(BuildContext context) async {
-    // UnifiedScanScreen pops with NutritionData when barcode is confirmed.
-    // For the food-photo path it pushes ResultScreen directly and then pops
-    // scan screen itself, so we only need to handle the barcode return here.
+
     final result = await Navigator.push<NutritionData>(
       context,
       PageRouteBuilder(
@@ -32,7 +27,6 @@ class ScanAiScreen extends StatelessWidget {
 
     if (!context.mounted || result == null) return;
 
-    // Barcode path returned NutritionData — push ResultScreen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ResultScreen(nutritionData: result)),
@@ -79,7 +73,6 @@ class ScanAiScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
 
-              // ── Header ──────────────────────────────────────────────────
               Row(
                 children: [
                   const Text(
@@ -92,7 +85,7 @@ class ScanAiScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  // Capability badge
+
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
@@ -123,14 +116,12 @@ class ScanAiScreen extends StatelessWidget {
 
               const SizedBox(height: 32),
 
-              // ── PRIMARY: Scan Meal (opens UnifiedScanScreen) ────────────
               _ScanMealButton(
                 onTap: () => _openUnifiedScan(context),
               ).animate().fadeIn(delay: 100.ms, duration: 500.ms).slideY(begin: 0.1),
 
               const SizedBox(height: 16),
 
-              // ── SECONDARY: Search Food (full-width) ─────────────────────
               _OutlineActionButton(
                 icon: Icons.search_rounded,
                 label: 'Search Food',
@@ -141,7 +132,6 @@ class ScanAiScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // ── TERTIARY: Health Insights (full-width, teal) ────────────
               _OutlineActionButton(
                 icon: Icons.insights_rounded,
                 label: 'Health Insights',
@@ -152,7 +142,6 @@ class ScanAiScreen extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              // ── Trust badge strip ────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -171,7 +160,6 @@ class ScanAiScreen extends StatelessWidget {
   }
 }
 
-// ─── SCAN MEAL hero button ─────────────────────────────────────────────────────
 class _ScanMealButton extends StatelessWidget {
   final VoidCallback? onTap;
   const _ScanMealButton({this.onTap});
@@ -201,7 +189,7 @@ class _ScanMealButton extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Subtle corner decoration
+
             Positioned(
               right: -20, top: -20,
               child: Container(
@@ -222,7 +210,7 @@ class _ScanMealButton extends StatelessWidget {
                 ),
               ),
             ),
-            // Content
+
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -257,7 +245,6 @@ class _ScanMealButton extends StatelessWidget {
   }
 }
 
-// ─── Outline action buttons ───────────────────────────────────────────────────
 class _OutlineActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -315,7 +302,6 @@ class _OutlineActionButton extends StatelessWidget {
   }
 }
 
-// ─── Trust badge ───────────────────────────────────────────────────────────────
 class _TrustBadge extends StatelessWidget {
   final IconData icon;
   final String label;

@@ -55,8 +55,6 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   List<MealEntry> _mealsFor(String type) =>
       _todayMeals.where((m) => m.mealType == type).toList();
 
-  /// Opens the unified camera/barcode screen.
-  /// Handles the barcode return (NutritionData) and pushes ResultScreen.
   Future<void> _navigateToSearch() async {
     final result = await Navigator.push<NutritionData>(
       context,
@@ -75,9 +73,9 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   Widget build(BuildContext context) {
     final settings   = UserSettings.instance;
     final calGoal    = settings.calorieLimit.toDouble();
-    final protGoal   = (calGoal * 0.30 / 4).roundToDouble();  // 30% from protein
-    final carbGoal   = (calGoal * 0.45 / 4).roundToDouble();  // 45% from carbs
-    final fatGoal    = (calGoal * 0.25 / 9).roundToDouble();  // 25% from fat
+    final protGoal   = (calGoal * 0.30 / 4).roundToDouble();
+    final carbGoal   = (calGoal * 0.45 / 4).roundToDouble();
+    final fatGoal    = (calGoal * 0.25 / 9).roundToDouble();
 
     final calEaten   = _totals['calories'] ?? 0;
     final protEaten  = _totals['protein']  ?? 0;
@@ -93,7 +91,7 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // ── Top bar ───────────────────────────────────────────────────
+
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -129,7 +127,7 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
                       ),
                     ),
                     const Spacer(),
-                    // Date badge
+
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
@@ -151,7 +149,6 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
               ).animate().fadeIn(duration: 400.ms),
             ),
 
-            // ── Avatar + Calorie ring hero ─────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24),
@@ -165,7 +162,6 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
               ),
             ),
 
-            // ── Macros row ────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -195,7 +191,6 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-            // ── Today's diary ─────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -262,7 +257,6 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-            // ── Water + Streak row ────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -293,9 +287,6 @@ class _DashboardHomeScreenState extends State<DashboardHomeScreen> {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Avatar + Calorie Arc Hero
-// ════════════════════════════════════════════════════════════════════════════
 class _AvatarCalorieHero extends StatelessWidget {
   final String gender;
   final double bodyComposition;
@@ -327,7 +318,7 @@ class _AvatarCalorieHero extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Subtle radial glow behind avatar
+
                 Container(
                   width: ringSize * 0.85,
                   height: ringSize * 0.85,
@@ -341,12 +332,12 @@ class _AvatarCalorieHero extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Calorie ring (CustomPainter)
+
                 CustomPaint(
                   size: Size(ringSize, ringSize),
                   painter: _CalorieRingPainter(progress: pct),
                 ),
-                // Avatar centered
+
                 YoAvatarWidget(
                   gender: gender,
                   size: avatarSize,
@@ -356,7 +347,7 @@ class _AvatarCalorieHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // Calorie label
+
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -422,7 +413,6 @@ class _CalorieRingPainter extends CustomPainter {
     const stroke = 7.0;
     const startAngle = -math.pi / 2;
 
-    // Track
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       0, 2 * math.pi, false,
@@ -434,7 +424,6 @@ class _CalorieRingPainter extends CustomPainter {
 
     if (progress <= 0) return;
 
-    // Glow
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       startAngle, 2 * math.pi * progress, false,
@@ -446,7 +435,6 @@ class _CalorieRingPainter extends CustomPainter {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
 
-    // Arc
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       startAngle, 2 * math.pi * progress, false,
@@ -462,9 +450,6 @@ class _CalorieRingPainter extends CustomPainter {
   bool shouldRepaint(_CalorieRingPainter old) => old.progress != progress;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Compact Water card (condensed vs. old WaterTrackerWidget hero)
-// ════════════════════════════════════════════════════════════════════════════
 class _CompactWaterCard extends StatefulWidget {
   @override
   State<_CompactWaterCard> createState() => _CompactWaterCardState();
@@ -489,7 +474,7 @@ class _CompactWaterCardState extends State<_CompactWaterCard> {
   Widget build(BuildContext context) {
     final svc = WaterService.instance;
     final current = svc.glasses;
-    const goal    = 8; // WaterService._goal
+    const goal    = 8;
     final pct     = (current / goal).clamp(0.0, 1.0);
 
     return GestureDetector(
@@ -537,9 +522,6 @@ class _CompactWaterCardState extends State<_CompactWaterCard> {
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Compact Streak card
-// ════════════════════════════════════════════════════════════════════════════
 class _CompactStreakCard extends StatefulWidget {
   @override
   State<_CompactStreakCard> createState() => _CompactStreakCardState();

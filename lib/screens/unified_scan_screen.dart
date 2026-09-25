@@ -16,20 +16,13 @@ import '../widgets/food_scan_overlay.dart';
 import 'food_search_screen.dart';
 import 'result_screen.dart';
 
-// ─── State machine ────────────────────────────────────────────────────────────
 enum _ScanState {
-  scanning,         // live camera, laser brackets idle, shutter active
-  barcodeDetected,  // punch+checkmark animation playing (~550 ms)
-  barcodeLoading,   // Open Food Facts lookup in flight
-  photoCapturing,   // shutter tapped, FoodScanOverlay HUD covering screen
+  scanning,
+  barcodeDetected,
+  barcodeLoading,
+  photoCapturing,
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// UnifiedScanScreen
-// ═════════════════════════════════════════════════════════════════════════════
-/// One camera screen for both flows:
-///  • barcode detected → auto-fires Open Food Facts lookup (no user tap needed)
-///  • shutter tapped   → sends photo to Gemini for food recognition
 class UnifiedScanScreen extends StatefulWidget {
   const UnifiedScanScreen({super.key});
 
@@ -55,10 +48,8 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
     super.dispose();
   }
 
-  // ── Barcode path ────────────────────────────────────────────────────────
-
   void _onBarcodeDetected(BarcodeCapture capture) {
-    if (_state != _ScanState.scanning) return; // guard repeat fires
+    if (_state != _ScanState.scanning) return;
     final code = capture.barcodes.firstOrNull?.rawValue;
     if (code == null || code == _lastCode) return;
 
@@ -66,7 +57,6 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
     setState(() { _state = _ScanState.barcodeDetected; _error = null; });
     HapticFeedback.mediumImpact();
 
-    // Let the pulse animation play for 550 ms, then start the lookup
     Future.delayed(const Duration(milliseconds: 550), () {
       if (mounted) {
         setState(() => _state = _ScanState.barcodeLoading);
@@ -128,17 +118,14 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
         healthTip:   'Scanned from barcode — exact values from Open Food Facts.',
       ));
     } else {
-      // User dismissed sheet — let them scan again
+
       setState(() { _state = _ScanState.scanning; _lastCode = null; });
     }
   }
 
-  // ── Food-photo path ─────────────────────────────────────────────────────
-
   Future<void> _onShutterTapped() async {
     if (!_isIdle) return;
 
-    // Pause the barcode scanner so it doesn't fire while the camera UI is open
     await _ctrl.stop();
 
     try {
@@ -164,7 +151,7 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
   }
 
   Future<void> _analyzeWithGemini(Uint8List bytes) async {
-    // Ensure API key loaded
+
     await ApiKeyService.instance.load();
 
     if (!GeminiFoodService.instance.isAvailable) {
@@ -193,9 +180,8 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
       final nutrition = await _enrich(result);
       if (!mounted) return;
 
-      // Capture navigator refs before popping — avoids async-gap BuildContext lint.
       final nav = Navigator.of(context);
-      nav.pop(); // pop UnifiedScanScreen
+      nav.pop();
       nav.push(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 500),
@@ -330,8 +316,6 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
 
   void _retry() => setState(() { _lastCode = null; _error = null; _state = _ScanState.scanning; });
 
-  // ── Build ────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final isProcessing = _state == _ScanState.photoCapturing;
@@ -341,17 +325,14 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
       body: Stack(
         children: [
 
-          // ── 1. Live camera (always behind everything) ──────────────────
           MobileScanner(
             controller: _ctrl,
             onDetect: _onBarcodeDetected,
             fit: BoxFit.cover,
           ),
 
-          // ── 2. Dark vignette ───────────────────────────────────────────
           const _Vignette(),
 
-          // ── 3. Large viewfinder corners (idle state) ───────────────────
           if (!isProcessing)
             Center(
               child: _ViewfinderBrackets(
@@ -362,11 +343,9 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
               ),
             ),
 
-          // ── 4. Detection pulse overlay (barcode detected) ──────────────
           if (_state == _ScanState.barcodeDetected)
             const _DetectionPulse(),
 
-          // ── 5. Top bar ─────────────────────────────────────────────────
           if (!isProcessing)
             SafeArea(
               child: Padding(
@@ -404,7 +383,6 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
               ).animate().fadeIn(duration: 400.ms),
             ),
 
-          // ── 6. Bottom controls ─────────────────────────────────────────
           if (!isProcessing)
             Positioned(
               bottom: 0, left: 0, right: 0,
@@ -412,7 +390,7 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Error card
+
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
@@ -460,7 +438,6 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
                         ).animate().slideY(begin: 0.3).fadeIn(),
                       ),
 
-                    // Hint pill
                     if (_error == null)
                       Container(
                         margin: const EdgeInsets.only(bottom: 16),
@@ -484,13 +461,12 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
                         ),
                       ),
 
-                    // Shutter row
                     Padding(
                       padding: const EdgeInsets.fromLTRB(40, 0, 40, 24),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Search text shortcut
+
                           GestureDetector(
                             onTap: () => Navigator.push(context,
                                 MaterialPageRoute(builder: (_) => const FoodSearchScreen())),
@@ -507,13 +483,11 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
                             ),
                           ),
 
-                          // Shutter — CAPTURE FOOD PHOTO
                           _ShutterButton(
                             onTap: _onShutterTapped,
                             isLoading: _state == _ScanState.barcodeLoading,
                           ),
 
-                          // Manual barcode fallback
                           GestureDetector(
                             onTap: _manualBarcodeEntry,
                             child: Container(
@@ -532,7 +506,6 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
                       ),
                     ),
 
-                    // "Type barcode" low-weight fallback link
                     GestureDetector(
                       onTap: _manualBarcodeEntry,
                       child: Padding(
@@ -554,13 +527,11 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
               ),
             ),
 
-          // ── 7. FoodScanOverlay — covers screen while Gemini processes ──
           if (isProcessing)
             Positioned.fill(
               child: FoodScanOverlay(imageBytes: _capturingBytes),
             ),
 
-          // ── 8. Barcode loading spinner (brief, between animation & sheet) ──
           if (_state == _ScanState.barcodeLoading)
             Container(
               color: Colors.black.withValues(alpha: 0.7),
@@ -580,9 +551,6 @@ class _UnifiedScanScreenState extends State<UnifiedScanScreen> {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// _DetectionPulse  — UPI-style checkmark burst animation
-// ═════════════════════════════════════════════════════════════════════════════
 class _DetectionPulse extends StatefulWidget {
   const _DetectionPulse();
 
@@ -605,7 +573,6 @@ class _DetectionPulseState extends State<_DetectionPulse>
       duration: const Duration(milliseconds: 550),
     )..forward();
 
-    // brackets snap to 110%, settle back to 100%
     _punchScale = TweenSequence([
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.1), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 20),
@@ -614,7 +581,6 @@ class _DetectionPulseState extends State<_DetectionPulse>
       curve: const Interval(0.0, 0.27, curve: Curves.easeOut),
     ));
 
-    // checkmark circle scales in with elastic bounce
     _checkScale = Tween(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _ctrl,
@@ -622,7 +588,6 @@ class _DetectionPulseState extends State<_DetectionPulse>
       ),
     );
 
-    // everything fades out together
     _fadeOut = Tween(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _ctrl,
@@ -649,7 +614,7 @@ class _DetectionPulseState extends State<_DetectionPulse>
           child: Stack(
             alignment: Alignment.center,
             children: [
-              // Corner brackets punch-scale
+
               Transform.scale(
                 scale: _punchScale.value,
                 child: _ViewfinderBrackets(
@@ -659,7 +624,6 @@ class _DetectionPulseState extends State<_DetectionPulse>
                 ),
               ),
 
-              // Teal checkmark circle
               Transform.scale(
                 scale: _checkScale.value,
                 child: Container(
@@ -687,9 +651,6 @@ class _DetectionPulseState extends State<_DetectionPulse>
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// _ViewfinderBrackets  — 4 L-shaped corner brackets drawn with CustomPainter
-// ═════════════════════════════════════════════════════════════════════════════
 class _ViewfinderBrackets extends StatelessWidget {
   final double size;
   final Color color;
@@ -732,17 +693,16 @@ class _BracketsPainter extends CustomPainter {
 
     const armFraction = 0.22;
     final arm = size.width * armFraction;
-    final r = size.width * 0.06; // corner rounding radius
+    final r = size.width * 0.06;
     final w = size.width;
     final h = size.height;
 
-    // Top-left
     _drawBracket(canvas, paint, Offset(0, 0), arm, r, BracketCorner.topLeft, w, h);
-    // Top-right
+
     _drawBracket(canvas, paint, Offset(w, 0), arm, r, BracketCorner.topRight, w, h);
-    // Bottom-left
+
     _drawBracket(canvas, paint, Offset(0, h), arm, r, BracketCorner.bottomLeft, w, h);
-    // Bottom-right
+
     _drawBracket(canvas, paint, Offset(w, h), arm, r, BracketCorner.bottomRight, w, h);
   }
 
@@ -781,9 +741,6 @@ class _BracketsPainter extends CustomPainter {
 
 enum BracketCorner { topLeft, topRight, bottomLeft, bottomRight }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// _ShutterButton
-// ═════════════════════════════════════════════════════════════════════════════
 class _ShutterButton extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isLoading;
@@ -833,9 +790,6 @@ class _ShutterButton extends StatelessWidget {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// _TopIconButton
-// ═════════════════════════════════════════════════════════════════════════════
 class _TopIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
@@ -861,9 +815,6 @@ class _TopIconButton extends StatelessWidget {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// Dark vignette
-// ═════════════════════════════════════════════════════════════════════════════
 class _Vignette extends StatelessWidget {
   const _Vignette();
 
@@ -882,9 +833,6 @@ class _Vignette extends StatelessWidget {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════════════
-// _PortionSheet  (lifted from BarcodeScannerScreen unchanged)
-// ═════════════════════════════════════════════════════════════════════════════
 class _PortionSheet extends StatelessWidget {
   final ScannedProduct product;
   final TextEditingController controller;

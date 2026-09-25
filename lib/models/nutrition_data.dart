@@ -28,7 +28,6 @@ class NutrientInfo {
       );
 }
 
-/// Nutritional data for a single ingredient within a dish.
 class IngredientData {
   final String name;
   final String amount;
@@ -108,7 +107,6 @@ class NutritionData {
     this.portionConfidence = 'medium',
   });
 
-  /// Whether this food has an ingredient breakdown.
   bool get hasIngredients => ingredients.isNotEmpty;
 
   factory NutritionData.fromJson(Map<String, dynamic> json) {
@@ -155,9 +153,6 @@ class NutritionData {
     );
   }
 
-  /// Scales every nutritional value for a user-confirmed portion adjustment.
-  /// The original serving description is preserved so callers can label the
-  /// chosen multiplier clearly instead of guessing a new volume or weight.
   NutritionData scale(double factor) => NutritionData(
         foodName: foodName,
         servingSize: servingSize,
@@ -176,8 +171,6 @@ class NutritionData {
         portionConfidence: portionConfidence,
       );
 
-  /// Keeps vision-derived meal details while replacing its estimated nutrient
-  /// values with a matched nutrition-database serving.
   NutritionData withNutritionFrom(NutritionData source) => NutritionData(
         foodName: foodName,
         servingSize: servingSize,

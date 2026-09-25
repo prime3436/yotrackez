@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import '../services/water_service.dart';
 import '../theme/app_theme.dart';
 
-/// Cyberpunk-styled water intake card.
-/// Tap the + button to add a glass, long-press any drop to remove one.
 class WaterTrackerWidget extends StatefulWidget {
   const WaterTrackerWidget({super.key});
 
@@ -91,7 +89,7 @@ class _WaterTrackerWidgetState extends State<WaterTrackerWidget>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+
           Row(
             children: [
               Container(
@@ -135,7 +133,7 @@ class _WaterTrackerWidgetState extends State<WaterTrackerWidget>
                 ],
               ),
               const Spacer(),
-              // Add glass button
+
               GestureDetector(
                 onTap: _add,
                 onLongPress: _remove,
@@ -171,7 +169,6 @@ class _WaterTrackerWidgetState extends State<WaterTrackerWidget>
 
           const SizedBox(height: 14),
 
-          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Stack(
@@ -202,7 +199,6 @@ class _WaterTrackerWidgetState extends State<WaterTrackerWidget>
 
           const SizedBox(height: 12),
 
-          // Drop indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: List.generate(goal, (i) {
@@ -224,7 +220,7 @@ class _WaterTrackerWidgetState extends State<WaterTrackerWidget>
                 ),
               );
             }),
-            // overflow extras
+
           ),
 
           if (glasses > 0)

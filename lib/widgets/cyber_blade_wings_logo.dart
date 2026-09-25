@@ -2,9 +2,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Concept 03: Cyber Blade Wings Emblem Widget
-/// NO ROTATION. Top wing comes from top, bottom wing comes from below,
-/// and a Cyberpunk Steel-Grey laser beam scans from top to bottom.
 class CyberBladeWingsLogo extends StatefulWidget {
   final double size;
   final bool animateStartupScan;
@@ -13,7 +10,7 @@ class CyberBladeWingsLogo extends StatefulWidget {
   const CyberBladeWingsLogo({
     super.key,
     this.size = 120.0,
-    this.animateStartupScan = false, // Static on main UI screen by default
+    this.animateStartupScan = false,
     this.animationDuration = const Duration(milliseconds: 2200),
   });
 
@@ -36,7 +33,7 @@ class _CyberBladeWingsLogoState extends State<CyberBladeWingsLogo>
     if (widget.animateStartupScan) {
       _controller.forward();
     } else {
-      _controller.value = 1.0; // Fully assembled static state
+      _controller.value = 1.0;
     }
   }
 
@@ -77,7 +74,7 @@ class _CyberBladeWingsLogoState extends State<CyberBladeWingsLogo>
 }
 
 class CyberBladeWingsPainter extends CustomPainter {
-  final double progress; // 0.0 -> 1.0
+  final double progress;
   final bool isScanning;
 
   CyberBladeWingsPainter({required this.progress, required this.isScanning});
@@ -88,17 +85,14 @@ class CyberBladeWingsPainter extends CustomPainter {
     final width = size.width;
     final height = size.height;
 
-    // Cyberpunk Steel Grey Color Token
     const cyberpunkGrey = Color(0xFF8A99AD);
 
-    // Outer HUD Ring (Fades in as wings arrive)
     final ringPaint = Paint()
       ..color = AppTheme.primary.withValues(alpha: 0.3 * progress)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawCircle(center, width * 0.44, ringPaint);
 
-    // Top Wing comes down from above (Y offset from -height * 0.35 to 0)
     final topWingOffsetY = -height * 0.35 * (1.0 - math.min(progress * 1.5, 1.0));
 
     final topWingPath = Path()
@@ -122,7 +116,6 @@ class CyberBladeWingsPainter extends CustomPainter {
 
     canvas.drawPath(topWingPath, topWingPaint);
 
-    // Bottom Wing comes up from below (Y offset from +height * 0.35 to 0)
     final bottomWingOffsetY = height * 0.35 * (1.0 - math.min(progress * 1.5, 1.0));
 
     final bottomWingPath = Path()
@@ -146,7 +139,6 @@ class CyberBladeWingsPainter extends CustomPainter {
 
     canvas.drawPath(bottomWingPath, bottomWingPaint);
 
-    // Center Diamond Pulse Core
     final diamondPath = Path()
       ..moveTo(width * 0.50, height * 0.30)
       ..lineTo(width * 0.60, height * 0.50)
@@ -163,7 +155,6 @@ class CyberBladeWingsPainter extends CustomPainter {
     canvas.drawPath(diamondPath, diamondFill);
     canvas.drawPath(diamondPath, diamondStroke);
 
-    // Cyberpunk Grey Laser Scan Beam (Sweeps from Top to Bottom)
     if (isScanning) {
       final scanY = height * 0.20 + (progress * height * 0.60);
 
@@ -179,7 +170,6 @@ class CyberBladeWingsPainter extends CustomPainter {
       );
     }
 
-    // Inner Core Circle
     final corePaint = Paint()..color = AppTheme.background;
     canvas.drawCircle(center, width * 0.05, corePaint);
   }

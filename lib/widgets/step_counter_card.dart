@@ -3,7 +3,6 @@ import 'package:percent_indicator/percent_indicator.dart';
 import '../services/step_counter_service.dart';
 import '../theme/app_theme.dart';
 
-/// Cyberpunk-styled step counter card with circular progress ring.
 class StepCounterCard extends StatelessWidget {
   final int stepGoal;
 

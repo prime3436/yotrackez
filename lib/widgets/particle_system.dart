@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// A particle system for the 3D meal-logged celebration.
-/// Emits colored confetti/energy particles that explode outward.
 class ParticleSystem extends StatefulWidget {
   final Color baseColor;
   final int count;

@@ -7,8 +7,6 @@ import '../services/meal_db_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
-/// History & Diary tab — shows meals for a selected day with date navigation,
-/// calorie summary, and macro breakdown. Works as a tab (no back button).
 class MealHistoryScreen extends StatefulWidget {
   const MealHistoryScreen({super.key});
 
@@ -61,7 +59,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
     final isToday = _selectedDate.year == today.year &&
         _selectedDate.month == today.month &&
         _selectedDate.day == today.day;
-    if (isToday) return; // can't go to the future
+    if (isToday) return;
     HapticFeedback.selectionClick();
     setState(() {
       _selectedDate = _selectedDate.add(const Duration(days: 1));
@@ -83,7 +81,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
     if (_selectedDate.year == yesterday.year &&
         _selectedDate.month == yesterday.month &&
         _selectedDate.day == yesterday.day) { return 'Yesterday'; }
-    // Format: "Mon, 18 Sep"
+
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -108,7 +106,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // ── Header ────────────────────────────────────────────────────
+
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -124,7 +122,7 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
                       ),
                     ),
                     const Spacer(),
-                    // Meal count badge
+
                     if (!_loading)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -148,7 +146,6 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
               ).animate().fadeIn(duration: 400.ms),
             ),
 
-            // ── Date Navigator ────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -188,7 +185,6 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
               ).animate().fadeIn(delay: 80.ms, duration: 400.ms),
             ),
 
-            // ── Calorie Summary Card ───────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -204,7 +200,6 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
               ),
             ),
 
-            // ── Meal List / Empty State ───────────────────────────────────
             if (_loading)
               const SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator(color: AppColors.primaryAction)),
@@ -298,7 +293,6 @@ class _MealHistoryScreenState extends State<MealHistoryScreen> {
   }
 }
 
-// ─── Calorie summary card ──────────────────────────────────────────────────────
 class _CalorieSummaryCard extends StatelessWidget {
   final double calEaten, calGoal, calProgress, remaining;
   final double protein, carbs, fat;
@@ -328,7 +322,7 @@ class _CalorieSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Calories eaten + remaining
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -382,7 +376,6 @@ class _CalorieSummaryCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
@@ -408,7 +401,6 @@ class _CalorieSummaryCard extends StatelessWidget {
           const Divider(color: AppColors.bgCardBorder, height: 1),
           const SizedBox(height: 16),
 
-          // Macro row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -447,7 +439,6 @@ class _MacroChip extends StatelessWidget {
   }
 }
 
-// ─── Individual meal card ─────────────────────────────────────────────────────
 class _MealCard extends StatelessWidget {
   final MealEntry meal;
   final VoidCallback onDelete;
@@ -487,7 +478,7 @@ class _MealCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Meal type icon + time column
+
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -512,7 +503,6 @@ class _MealCard extends StatelessWidget {
             ),
             const SizedBox(width: 14),
 
-            // Food name + macros
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,7 +551,6 @@ class _MealCard extends StatelessWidget {
 
             const SizedBox(width: 12),
 
-            // Calories badge
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -605,7 +594,6 @@ class _MiniMacro extends StatelessWidget {
   }
 }
 
-// ─── Navigation arrow button ──────────────────────────────────────────────────
 class _NavArrow extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;

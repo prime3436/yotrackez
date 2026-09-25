@@ -1,20 +1,17 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// User settings & profile: identity, body stats, fitness goal,
-/// calorie/step targets, gender (for avatar), avatar state.
 class UserSettings {
   static const String _calorieKey = 'daily_calorie_limit';
   static const String _stepGoalKey = 'step_goal';
-  static const String _genderKey = 'gender'; // 'male' or 'female'
+  static const String _genderKey = 'gender';
   static const String _onboardedKey = 'onboarded';
 
-  // ─── Profile fields ─────────────────────────────────────
   static const String _nameKey = 'profile_name';
   static const String _photoPathKey = 'profile_photo_path';
   static const String _ageKey = 'profile_age';
   static const String _heightCmKey = 'profile_height_cm';
   static const String _weightKgKey = 'profile_weight_kg';
-  static const String _goalKey = 'profile_goal'; // 'lose' | 'maintain' | 'gain'
+  static const String _goalKey = 'profile_goal';
 
   static UserSettings? _instance;
   UserSettings._();
@@ -47,7 +44,6 @@ class UserSettings {
   double get weightKg => _weightKg;
   String get goal => _goal;
 
-  /// Load settings from shared prefs.
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _calorieLimit = prefs.getInt(_calorieKey) ?? 2000;
@@ -87,8 +83,6 @@ class UserSettings {
     await prefs.setBool(_onboardedKey, value);
   }
 
-  // ─── Profile setters ──────────────────────────────────────────────────
-
   Future<void> setName(String value) async {
     _name = value;
     final prefs = await SharedPreferences.getInstance();
@@ -123,14 +117,12 @@ class UserSettings {
     await prefs.setDouble(_weightKgKey, value);
   }
 
-  /// goal: 'lose' | 'maintain' | 'gain'
   Future<void> setGoal(String value) async {
     _goal = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_goalKey, value);
   }
 
-  /// Save every profile field in one shot (used by the Profile screen's Save button).
   Future<void> saveProfile({
     required String name,
     String? photoPath,
@@ -149,9 +141,6 @@ class UserSettings {
     await setGender(gender);
   }
 
-  // ─── Derived health metrics ───────────────────────────────────────────
-
-  /// Body Mass Index = kg / m^2
   double get bmi {
     final heightM = _heightCm / 100;
     if (heightM <= 0) return 0;
@@ -167,24 +156,20 @@ class UserSettings {
     return 'Obese';
   }
 
-  /// Basal Metabolic Rate via Mifflin-St Jeor equation.
   double get bmr {
     final base = 10 * _weightKg + 6.25 * _heightCm - 5 * _age;
     return _gender == 'female' ? base - 161 : base + 5;
   }
 
-  /// Suggested daily calorie target based on BMR, a moderate activity
-  /// multiplier, and the user's stated goal. This is a starting point —
-  /// users can still override it manually via [setCalorieLimit].
   int get suggestedCalorieLimit {
-    const activityMultiplier = 1.375; // light activity baseline
+    const activityMultiplier = 1.375;
     double target = bmr * activityMultiplier;
     switch (_goal) {
       case 'lose':
-        target -= 500; // ~0.5kg/week deficit
+        target -= 500;
         break;
       case 'gain':
-        target += 400; // lean surplus
+        target += 400;
         break;
       case 'maintain':
       default:
@@ -193,9 +178,6 @@ class UserSettings {
     return target.clamp(1200, 4500).round();
   }
 
-  /// Avatar state (5 levels based on net calories):
-  /// net = calories eaten - calories burned (steps)
-  /// Very Fit (< -500), Fit (-500..0), Normal (0..300), Chubby (300..700), Overweight (>700)
   String getAvatarState(double netCalories) {
     if (netCalories < -500) return 'very_fit';
     if (netCalories < 0) return 'fit';
@@ -235,14 +217,6 @@ class UserSettings {
     }
   }
 
-  // ─── BMI-based base avatar appearance ─────────────────────────────────
-  //
-  // This is the character's *baseline* look, driven by BMI (changes slowly,
-  // as your stats change). It's distinct from [getAvatarState], which drives
-  // the *daily* mood/glow feedback based on today's net calories. Both reuse
-  // the same 5 avatar art assets, so no new art is required.
-
-  /// Maps BMI to one of the 5 existing avatar body states.
   String get bmiBodyState {
     final b = bmi;
     if (b <= 0) return 'normal';

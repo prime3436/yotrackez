@@ -3,16 +3,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/user_settings.dart';
 import '../theme/app_theme.dart';
 
-/// Editable settings / profile screen.
-///
-/// Lets the user update every field set during onboarding:
-///   – Name, gender
-///   – Age, height, weight
-///   – Fitness goal
-///   – Daily calorie limit (manual override or re-calculate)
-///   – Step goal
-///
-/// Changes are saved immediately on each field tap / slider release.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -95,7 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // ── Header ──
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
@@ -117,17 +107,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              // ── Scrollable body ──
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
                   children: [
 
-                    // ── BMI / Health card ──
                     _buildBmiCard(context),
                     const SizedBox(height: 24),
 
-                    // ── Identity ──
                     _SectionHeader('Identity'),
                     const SizedBox(height: 12),
                     _buildNameField(context),
@@ -135,7 +122,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildGenderRow(),
                     const SizedBox(height: 24),
 
-                    // ── Body stats ──
                     _SectionHeader('Body Stats'),
                     const SizedBox(height: 12),
                     _buildSliderCard('Age', _age.toDouble(), 'yrs', 15, 80, 65,
@@ -148,26 +134,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         (v) => setState(() => _weightKg = v)),
                     const SizedBox(height: 24),
 
-                    // ── Goal ──
                     _SectionHeader('Fitness Goal'),
                     const SizedBox(height: 12),
                     _buildGoalSelector(),
                     const SizedBox(height: 24),
 
-                    // ── Calorie target ──
                     _SectionHeader('Daily Calorie Target'),
                     const SizedBox(height: 12),
                     _buildCalorieCard(context),
                     const SizedBox(height: 24),
 
-                    // ── Step goal ──
                     _SectionHeader('Daily Step Goal'),
                     const SizedBox(height: 12),
                     _buildSliderCard('Steps', _stepGoal.toDouble(), 'steps', 2000, 20000, 180,
                         (v) => setState(() => _stepGoal = v.round())),
                     const SizedBox(height: 32),
 
-                    // ── Save button ──
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -196,7 +178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildBmiCard(BuildContext context) {
-    // Use current slider values (not yet saved to UserSettings)
+
     final heightM = _heightCm / 100;
     final bmi = heightM > 0 ? _weightKg / (heightM * heightM) : 0.0;
     final String bmiLabel;

@@ -9,8 +9,6 @@ import '../services/calorie_body_service.dart';
 import 'cyber_blade_wings_logo.dart';
 import 'yo_avatar_widget.dart';
 
-/// Lightweight full-screen HUD scanning overlay.
-/// Uses CSS-style animations only — no heavy custom painters.
 class FoodScanOverlay extends StatefulWidget {
   final Uint8List? imageBytes;
   const FoodScanOverlay({super.key, this.imageBytes});
@@ -98,11 +96,10 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
           mainAxisSize: MainAxisSize.min,
           children: [
 
-            // ── Animated emoji avatar (no heavy painter) ──────────────────
             Stack(
               alignment: Alignment.center,
               children: [
-                // Pulsing glow ring
+
                 AnimatedBuilder(
                   animation: _pulse,
                   builder: (ctx, child) => Transform.scale(
@@ -121,7 +118,6 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
                   ),
                 ),
 
-                // Spinning orbit ring
                 AnimatedBuilder(
                   animation: _spinCtrl,
                   builder: (ctx, child) => CustomPaint(
@@ -130,7 +126,6 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
                   ),
                 ),
 
-                // Premium 3D avatar with bob
                 AnimatedBuilder(
                   animation: _bob,
                   builder: (ctx, child) => Transform.translate(
@@ -138,7 +133,7 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Rive avatar — real bodyComposition from calorie engine
+
                         YoAvatarWidget(
                           gender: UserSettings.instance.gender,
                           size: 200,
@@ -147,7 +142,6 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
                               CalorieBodyService.instance.bodyComposition,
                         ),
 
-                        // Thought badge below
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 350),
                           transitionBuilder: (child, anim) => ScaleTransition(
@@ -187,19 +181,16 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
 
             const SizedBox(height: 28),
 
-            // ── Scan frame ────────────────────────────────────────────────
             _buildScanFrame(),
 
             const SizedBox(height: 24),
 
-            // ── Logo ──────────────────────────────────────────────────────
             const CyberBladeWingsLogo(size: 48, animateStartupScan: false)
                 .animate(onPlay: (c) => c.repeat(reverse: true))
                 .scaleXY(begin: 0.9, end: 1.1, duration: 800.ms),
 
             const SizedBox(height: 16),
 
-            // ── Status text ───────────────────────────────────────────────
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: Text(
@@ -216,7 +207,6 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
 
             const SizedBox(height: 12),
 
-            // ── Progress shimmer ──────────────────────────────────────────
             SizedBox(
               width: 160,
               child: LinearProgressIndicator(
@@ -239,7 +229,7 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Photo
+
           Container(
             width: sz, height: sz,
             decoration: BoxDecoration(
@@ -254,7 +244,7 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
                       child: const Icon(Icons.restaurant_rounded, size: 40, color: AppTheme.textSecondary)),
             ),
           ),
-          // Scrim
+
           Container(
             width: sz, height: sz,
             decoration: BoxDecoration(
@@ -262,9 +252,9 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
               color: AppTheme.background.withValues(alpha: 0.2),
             ),
           ),
-          // Laser line
+
           _ScanLine(frameSize: sz),
-          // Corners
+
           ..._corners(sz),
         ],
       ),
@@ -282,10 +272,6 @@ class _FoodScanOverlayState extends State<FoodScanOverlay>
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Lightweight spinning ring — only draws 1 arc + 1 dot per frame
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _RingPainter extends CustomPainter {
   final double progress;
   const _RingPainter(this.progress);
@@ -295,13 +281,11 @@ class _RingPainter extends CustomPainter {
     final c = Offset(size.width / 2, size.height / 2);
     final r = size.width / 2 - 4;
 
-    // Faint circle
     canvas.drawCircle(c, r, Paint()
       ..color = AppTheme.primary.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5);
 
-    // Moving dot
     final angle = progress * 2 * math.pi;
     final dx = c.dx + r * math.cos(angle);
     final dy = c.dy + r * math.sin(angle);
@@ -314,10 +298,6 @@ class _RingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _RingPainter old) => old.progress != progress;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Scan laser line
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _ScanLine extends StatefulWidget {
   final double frameSize;
@@ -345,10 +325,6 @@ class _ScanLineState extends State<_ScanLine> with SingleTickerProviderStateMixi
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// HUD corner brackets
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _CornerPainter extends CustomPainter {
   final Color color; final bool top; final bool left;

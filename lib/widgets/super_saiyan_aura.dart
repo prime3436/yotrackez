@@ -18,14 +18,14 @@ class SuperSaiyanAura extends StatefulWidget {
 }
 
 class _SuperSaiyanAuraState extends State<SuperSaiyanAura> with SingleTickerProviderStateMixin {
-  late AnimationController _controller; 
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150), // very fast pulse for DBZ feel
+      duration: const Duration(milliseconds: 150),
     );
     if (widget.isActive) {
       _controller.repeat(reverse: true);
@@ -84,29 +84,25 @@ class _AuraPainter extends CustomPainter {
 
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = size.width / 2.0;
-    
-    // Draw glowing backdrop
+
     final bgPaint = Paint()
       ..color = color.withValues(alpha: 0.3 + (0.3 * progress))
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20.0);
     canvas.drawCircle(center, maxRadius * 0.7 + (progress * 15), bgPaint);
 
-    // We use the progress to drive a smooth sine wave for the spikes
-    final time = progress * 2 * math.pi * 3; // 3 full cycles per animation loop
+    final time = progress * 2 * math.pi * 3;
     final numSpikes = 32;
-    
-    // Outer Aura
+
     final path = Path();
     for (int i = 0; i < numSpikes; i++) {
       final angle = (i * 2 * math.pi) / numSpikes;
-      
-      // Undulate smoothly based on time and spike index
-      final undulation = math.sin(time + i * 1.5) * 0.5 + 0.5; // 0.0 to 1.0
-      
+
+      final undulation = math.sin(time + i * 1.5) * 0.5 + 0.5;
+
       final spikeLength = maxRadius * 0.6 + (maxRadius * 0.4) * (0.5 + undulation * 0.5);
       final jitter = math.cos(time * 1.5 + i) * 0.1;
       final finalAngle = angle + jitter;
-      
+
       final point = Offset(
         center.dx + math.cos(finalAngle) * spikeLength,
         center.dy + math.sin(finalAngle) * spikeLength,
@@ -127,18 +123,16 @@ class _AuraPainter extends CustomPainter {
 
     canvas.drawPath(path, paint);
 
-    // Inner Aura
     final innerPath = Path();
     for (int i = 0; i < numSpikes; i++) {
       final angle = (i * 2 * math.pi) / numSpikes;
-      
-      // Inner undulation is slightly offset
+
       final undulation = math.sin(time * 1.2 + i * 1.3) * 0.5 + 0.5;
-      
+
       final spikeLength = maxRadius * 0.5 + (maxRadius * 0.2) * (0.6 + undulation * 0.4);
       final jitter = math.sin(time * 1.2 + i) * 0.1;
       final finalAngle = angle + jitter;
-      
+
       final point = Offset(
         center.dx + math.cos(finalAngle) * spikeLength,
         center.dy + math.sin(finalAngle) * spikeLength,
@@ -155,7 +149,7 @@ class _AuraPainter extends CustomPainter {
     final innerPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.6 + 0.4 * progress)
       ..style = PaintingStyle.fill;
-      
+
     canvas.drawPath(innerPath, innerPaint);
   }
 

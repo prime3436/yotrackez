@@ -4,14 +4,6 @@ import 'package:http/http.dart' as http;
 import '../models/nutrition_data.dart';
 import 'nutrition_db_service.dart';
 
-/// Multi-source nutrition database lookup service.
-///
-/// Lookup priority chain:
-///   1. Bundled local DB  (instant, no network)
-///   2. Open Food Facts   (free, no key required)
-///   3. USDA FoodData Central (high-quality, requires no key for basic search)
-///
-/// Returns the first successful [NutritionData] found, or null.
 class NutritionLookupService {
   static NutritionLookupService? _instance;
   static NutritionLookupService get instance {
@@ -22,17 +14,14 @@ class NutritionLookupService {
 
   static const Duration _timeout = Duration(seconds: 10);
 
-  /// Look up nutrition for [foodName], searching through all sources.
-  /// Returns null only if all sources fail.
   Future<NutritionData?> lookup(String foodName) async {
-    // 1. Local bundled DB (fastest)
+
     final local = NutritionDbService.instance.lookupByName(foodName);
     if (local != null) {
       debugPrint('[NutritionLookup] Hit local DB for "$foodName"');
       return local;
     }
 
-    // 2. Open Food Facts
     try {
       final off = await _lookupOpenFoodFacts(foodName);
       if (off != null) {
@@ -43,7 +32,6 @@ class NutritionLookupService {
       debugPrint('[NutritionLookup] OpenFoodFacts error: $e');
     }
 
-    // 3. USDA FoodData Central
     try {
       final usda = await _lookupUSDA(foodName);
       if (usda != null) {
@@ -57,8 +45,6 @@ class NutritionLookupService {
     debugPrint('[NutritionLookup] All sources missed for "$foodName"');
     return null;
   }
-
-  // ─── Open Food Facts ───────────────────────────────────────────────────────
 
   Future<NutritionData?> _lookupOpenFoodFacts(String foodName) async {
     final query = Uri.encodeQueryComponent(foodName);
@@ -84,7 +70,6 @@ class NutritionLookupService {
     final cal100 = d('energy-kcal');
     final serving = (p['serving_size'] as String?) ?? '100g';
 
-    // Estimate per-serving from per-100g
     double servingG = 100.0;
     final servingMatch = RegExp(r'(\d+\.?\d*)').firstMatch(serving);
     if (servingMatch != null) {
@@ -112,7 +97,7 @@ class NutritionLookupService {
       sugar: ni('sugars', 'Sugar', 'g'),
       sodium: NutrientInfo(
           name: 'Sodium',
-          amount: d('sodium') * ratio * 1000, // kg → mg
+          amount: d('sodium') * ratio * 1000,
           unit: 'mg',
           dailyPercent: null),
       cholesterol: const NutrientInfo(name: 'Cholesterol', amount: 0, unit: 'mg'),
@@ -122,10 +107,8 @@ class NutritionLookupService {
     );
   }
 
-  // ─── USDA FoodData Central ─────────────────────────────────────────────────
-
   Future<NutritionData?> _lookupUSDA(String foodName) async {
-    // USDA demo key — 1000 req/day per IP, sufficient for fallback use
+
     const apiKey = 'DEMO_KEY';
     final query = Uri.encodeQueryComponent(foodName);
     final uri = Uri.parse(
@@ -152,17 +135,16 @@ class NutritionLookupService {
       return 0.0;
     }
 
-    // USDA nutrient IDs (per 100g basis for SR Legacy)
-    final cal = nutrient(1008);       // Energy (kcal)
-    final carbs = nutrient(1005);     // Carbohydrate
-    final protein = nutrient(1003);   // Protein
-    final fat = nutrient(1004);       // Total fat
-    final fiber = nutrient(1079);     // Fiber
-    final sugar = nutrient(2000);     // Sugars
-    final sodium = nutrient(1093);    // Sodium (mg)
-    final cholesterol = nutrient(1253); // Cholesterol (mg)
-    final vitC = nutrient(1162);      // Vitamin C
-    final vitA = nutrient(1104);      // Vitamin A (IU→%DV ≈ /900)
+    final cal = nutrient(1008);
+    final carbs = nutrient(1005);
+    final protein = nutrient(1003);
+    final fat = nutrient(1004);
+    final fiber = nutrient(1079);
+    final sugar = nutrient(2000);
+    final sodium = nutrient(1093);
+    final cholesterol = nutrient(1253);
+    final vitC = nutrient(1162);
+    final vitA = nutrient(1104);
 
     NutrientInfo nInfo(String name, double amount, String unit) =>
         NutrientInfo(name: name, amount: amount, unit: unit, dailyPercent: null);
@@ -186,7 +168,7 @@ class NutritionLookupService {
             dailyPercent: vitC / 90 * 100),
         NutrientInfo(
             name: 'Vitamin A',
-            amount: vitA / 9, // IU → %DV approximation
+            amount: vitA / 9,
             unit: '%DV',
             dailyPercent: vitA / 900),
       ],

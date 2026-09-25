@@ -1,21 +1,11 @@
-/**
- * YOTRACKEZ — In-Browser Food Classifier
- * Uses TensorFlow.js MobileNet to classify food images.
- * Called from Dart via JS interop.
- */
 
-// Global model reference (loaded once, reused)
 let _mobilenetModel = null;
 let _modelLoading = false;
 
-/**
- * Load MobileNet model (lazy, cached after first call).
- * Returns true when ready.
- */
 async function loadClassifierModel() {
   if (_mobilenetModel) return true;
   if (_modelLoading) {
-    // Wait for ongoing load
+
     while (_modelLoading) {
       await new Promise(r => setTimeout(r, 100));
     }
@@ -36,18 +26,12 @@ async function loadClassifierModel() {
   }
 }
 
-/**
- * Classify an image from raw bytes (Uint8Array).
- * Returns a JSON string of predictions:
- * [{"className": "pizza", "probability": 0.92}, ...]
- */
 async function classifyImageBytes(uint8Array) {
   try {
-    // Ensure model is loaded
+
     const loaded = await loadClassifierModel();
     if (!loaded) return '[]';
 
-    // Convert bytes to image via canvas
     const blob = new Blob([uint8Array], { type: 'image/jpeg' });
     const url = URL.createObjectURL(blob);
 
@@ -58,17 +42,14 @@ async function classifyImageBytes(uint8Array) {
       img.src = url;
     });
 
-    // Draw to canvas (MobileNet needs an HTMLImageElement or canvas)
     const canvas = document.getElementById('tfjs-canvas');
     canvas.width = 224;
     canvas.height = 224;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, 224, 224);
 
-    // Clean up blob URL
     URL.revokeObjectURL(url);
 
-    // Run classification
     const predictions = await _mobilenetModel.classify(canvas, 10);
 
     console.log('[YOTRACKEZ] Predictions:', predictions);
@@ -79,9 +60,7 @@ async function classifyImageBytes(uint8Array) {
   }
 }
 
-/**
- * Check if the model is loaded and ready.
- */
 function isClassifierReady() {
   return _mobilenetModel !== null;
 }
+

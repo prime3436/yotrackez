@@ -21,9 +21,6 @@ import 'profile_screen.dart';
 import 'result_screen.dart';
 import 'barcode_scanner_screen.dart';
 
-
-
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -39,29 +36,27 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-load services
+
     NutritionDbService.instance.load();
     ApiKeyService.instance.load().then((_) {
       if (mounted) setState(() {});
     });
-    // Run calorie engine once per day — drives the Rive avatar bodyComposition
+
     CalorieBodyService.instance.loadCached().then((_) {
       CalorieBodyService.instance.runIfNeeded();
     });
-    // Load water + streak trackers
+
     WaterService.instance.load();
     StreakService.instance.load();
   }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      // Pick the image at full quality — ImagePreprocessor will resize
-      // and normalise it before sending to the AI (avoids double-compression).
+
       final XFile? image = await _picker.pickImage(source: source);
       if (image != null && mounted) {
         final bytes = await image.readAsBytes();
 
-        // If Gemini API key is set, use Gemini for analysis
         if (GeminiFoodService.instance.isAvailable) {
           await _analyzeWithGemini(bytes);
         } else {
@@ -121,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Analyze food image using Gemini Vision API.
   Future<void> _analyzeWithGemini(Uint8List imageBytes) async {
     setState(() {
       _analyzing = true;
@@ -135,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _analyzing = false);
 
       if (result == null || GeminiFoodService.isNotFood(result)) {
-        // Gemini couldn't identify — fall back to manual search
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('AI could not identify the food. Search manually below.'),
@@ -152,8 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final nutrition = await _enrichVisionNutrition(result);
       if (!mounted) return;
 
-      // Go directly to the review screen with Gemini's detection and a
-      // database-backed nutrient profile whenever both servings use grams.
       Navigator.push(
         context,
         PageRouteBuilder(
@@ -213,9 +205,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Cross-check a detected food against the local/Open Food Facts/USDA chain.
-  /// A replacement is only used when both servings state a gram weight, so a
-  /// "slice" or "cup" is never silently treated as an equivalent portion.
   Future<NutritionData> _enrichVisionNutrition(NutritionData vision) async {
     try {
       await NutritionDbService.instance.load();
@@ -228,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return vision.withNutritionFrom(database.scale(factor));
       }
     } catch (_) {
-      // Vision nutrition remains a safe fallback if a network source is down.
+
     }
     return vision;
   }
@@ -239,7 +228,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return match == null ? null : double.tryParse(match.group(1)!);
   }
 
-  /// Show dialog to enter/update Gemini API key.
   void _showApiKeyDialog() {
     final controller = TextEditingController(
       text: ApiKeyService.instance.apiKey ?? '',
@@ -422,13 +410,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (!mounted || result == null) return;
 
-    // Feed directly into ResultScreen — same flow as AI photo scan
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => ResultScreen(nutritionData: result)),
     );
   }
-
 
   void _showImageSourceSheet() {
     showModalBottomSheet(
@@ -448,7 +434,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: Stack(
           children: [
-            // Animated Glowing Background Orb
+
             Positioned(
               top: MediaQuery.of(context).size.height * 0.25,
               left: -80,
@@ -470,8 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                .scaleXY(begin: 0.95, end: 1.05, duration: 3.seconds)
                .fadeIn(duration: 1.seconds),
             ),
-            
-            // Foreground Content
+
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -480,11 +465,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     return SingleChildScrollView(
                       child: Column(
                         children: [
-                              // Top bar with settings
+
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  // Profile button
+
                                   GestureDetector(
                                     onTap: () => Navigator.push(
                                       context,
@@ -504,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ),
-                                  // AI status badge
+
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                     decoration: BoxDecoration(
@@ -551,7 +536,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 16),
 
-                              // Logo - Cyber Blade Wings Emblem (Static on main UI dashboard)
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
@@ -562,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 child: const CyberBladeWingsLogo(
                                   size: 64,
-                                  animateStartupScan: false, // Fully static on main UI dashboard (NO ROTATION)
+                                  animateStartupScan: false,
                                 ),
                               )
                                   .animate()
@@ -571,7 +555,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 28),
 
-                              // App Name
                               Text(
                                 'YOTRACKEZ',
                                 style: Theme.of(context)
@@ -598,7 +581,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 24),
 
-                              // Main card
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
@@ -618,9 +600,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ).animate(onPlay: (c) => c.repeat(reverse: true))
                                      .moveY(begin: -5, end: 5, duration: 2.seconds),
-                                     
+
                                     const SizedBox(height: 16),
-                                    
+
                                     Text(
                                       'Scan Your Food',
                                       style: Theme.of(context).textTheme.headlineMedium,
@@ -640,7 +622,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                               const SizedBox(height: 24),
 
-                    // SCAN button (or analyzing state)
                     Container(
                       width: double.infinity,
                       height: 64,
@@ -710,7 +691,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 14),
 
-                    // SEARCH button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -742,7 +722,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 10),
 
-                    // SCAN BARCODE button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -774,7 +753,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 10),
 
-                    // HEALTH INSIGHTS button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -806,7 +784,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 18),
 
-                    // Features row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -818,7 +795,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // ── Water Tracker ──────────────────────────────────
                     const WaterTrackerWidget()
                         .animate()
                         .fadeIn(delay: 1100.ms, duration: 600.ms)
@@ -826,7 +802,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 14),
 
-                    // ── Streak Card ────────────────────────────────────
                     _StreakCard()
                         .animate()
                         .fadeIn(delay: 1200.ms, duration: 600.ms)
@@ -841,7 +816,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Full-screen scanning animation while Gemini analyzes the photo
             if (_analyzing)
               Positioned.fill(
                 child: FoodScanOverlay(imageBytes: _analyzingImageBytes),
@@ -917,7 +891,6 @@ class _StreakCardState extends State<_StreakCard> {
     final longest = svc.longestStreak;
     final loggedToday = svc.loggedToday;
 
-    // Build fire emojis (up to 7)
     final fires = streak == 0
         ? ''
         : List.filled(streak.clamp(0, 7), '🔥').join();
@@ -956,7 +929,7 @@ class _StreakCardState extends State<_StreakCard> {
       ),
       child: Row(
         children: [
-          // Streak number circle
+
           Container(
             width: 56,
             height: 56,

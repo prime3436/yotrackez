@@ -7,7 +7,6 @@ import '../services/meal_db_service.dart';
 import '../services/recommendation_service.dart';
 import '../theme/app_theme.dart';
 
-/// Health Insights & Macro Breakdown screen.
 class HealthInsightsScreen extends StatefulWidget {
   const HealthInsightsScreen({super.key});
 
@@ -525,8 +524,6 @@ class _HealthInsightsScreenState extends State<HealthInsightsScreen>
   }
 }
 
-// ─── Data classes ─────────────────────────────────────────────────────────────
-
 class _MacroData {
   final String label;
   final double current;
@@ -542,8 +539,6 @@ class _PieSlice {
   final Color color;
   const _PieSlice(this.fraction, this.color);
 }
-
-// ─── Macro Ring Card ──────────────────────────────────────────────────────────
 
 class _MacroRingCard extends StatelessWidget {
   final _MacroData data;
@@ -617,8 +612,6 @@ class _MacroRingCard extends StatelessWidget {
   }
 }
 
-// ─── Pie Legend Row ───────────────────────────────────────────────────────────
-
 class _PieLegendRow extends StatelessWidget {
   final Color color;
   final String label;
@@ -664,8 +657,6 @@ class _PieLegendRow extends StatelessWidget {
     );
   }
 }
-
-// ─── Recommendation Card ──────────────────────────────────────────────────────
 
 class _RecommendationCard extends StatelessWidget {
   final Recommendation rec;
@@ -746,8 +737,6 @@ class _RecommendationCard extends StatelessWidget {
     );
   }
 }
-
-// ─── CustomPainters ───────────────────────────────────────────────────────────
 
 class _GaugePainter extends CustomPainter {
   final double progress;

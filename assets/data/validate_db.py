@@ -19,13 +19,11 @@ print(f"\nEntries with ingredients array ({len(with_ingr)}):")
 for i in with_ingr:
     print(f"  - {i}")
 
-# Verify standalone items do NOT have ingredients
 for s in standalone:
     entry = next(d for d in data if d['id'] == s)
     if 'ingredients' in entry:
         print(f"ERROR: {s} should NOT have ingredients!")
 
-# Verify old entries preserved
 old_entries = ["apple_pie","hamburger","pizza","steak","waffles"]
 for oid in old_entries:
     if oid not in ids:

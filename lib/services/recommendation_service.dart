@@ -2,12 +2,6 @@ import 'package:flutter/foundation.dart';
 import '../models/meal_entry.dart';
 import '../models/user_settings.dart';
 
-/// AI Recommendation Layer.
-///
-/// Analyses the user's recent meal history against their calorie / macro goals
-/// and produces actionable, personalised health recommendations.
-///
-/// This runs entirely on-device — no network call needed.
 class RecommendationService {
   static RecommendationService? _instance;
   static RecommendationService get instance {
@@ -16,16 +10,13 @@ class RecommendationService {
   }
   RecommendationService._();
 
-  /// Generate a [MealRecommendation] for [meals] (typically today's entries).
   MealRecommendation generateForDay(List<MealEntry> meals) {
     final settings = UserSettings.instance;
     final calorieGoal = settings.calorieLimit.toDouble();
 
-    // Macro targets based on standard 40/30/30 split (carb/protein/fat)
-    // adjusted to the user's calorie goal
-    final proteinGoalG = calorieGoal * 0.30 / 4;  // 4 kcal/g
-    final carbGoalG = calorieGoal * 0.40 / 4;      // 4 kcal/g
-    final fatGoalG = calorieGoal * 0.30 / 9;       // 9 kcal/g
+    final proteinGoalG = calorieGoal * 0.30 / 4;
+    final carbGoalG = calorieGoal * 0.40 / 4;
+    final fatGoalG = calorieGoal * 0.30 / 9;
 
     double totalCal = 0, totalPro = 0, totalCarb = 0, totalFat = 0, totalFiber = 0;
     final mealTypes = <String>{};
@@ -47,7 +38,6 @@ class RecommendationService {
     final tips = <Recommendation>[];
     var overallScore = HealthScore.good;
 
-    // ── Calorie analysis ──────────────────────────────────────────────────
     if (calPct > 1.15) {
       overallScore = HealthScore.needsAttention;
       tips.add(Recommendation(
@@ -75,7 +65,6 @@ class RecommendationService {
       ));
     }
 
-    // ── Protein analysis ──────────────────────────────────────────────────
     if (proPct < 0.6 && meals.isNotEmpty) {
       overallScore = overallScore == HealthScore.good ? HealthScore.fair : overallScore;
       tips.add(Recommendation(
@@ -96,7 +85,6 @@ class RecommendationService {
       ));
     }
 
-    // ── Fiber analysis ────────────────────────────────────────────────────
     if (totalFiber < 15 && meals.isNotEmpty) {
       tips.add(Recommendation(
         icon: '🥦',
@@ -107,7 +95,6 @@ class RecommendationService {
       ));
     }
 
-    // ── Fat analysis ──────────────────────────────────────────────────────
     if (fatPct > 1.2) {
       overallScore = HealthScore.needsAttention;
       tips.add(Recommendation(
@@ -120,7 +107,6 @@ class RecommendationService {
       ));
     }
 
-    // ── Meal variety analysis ─────────────────────────────────────────────
     if (meals.length >= 3 && mealTypes.length < 2) {
       tips.add(Recommendation(
         icon: '🕐',
@@ -131,7 +117,6 @@ class RecommendationService {
       ));
     }
 
-    // ── No meals ──────────────────────────────────────────────────────────
     if (meals.isEmpty) {
       tips.add(Recommendation(
         icon: '📸',
@@ -142,7 +127,6 @@ class RecommendationService {
       ));
     }
 
-    // ── Hydration reminder (time-based) ───────────────────────────────────
     final hour = DateTime.now().hour;
     if (hour >= 14 && hour < 18) {
       tips.add(Recommendation(
@@ -154,7 +138,6 @@ class RecommendationService {
       ));
     }
 
-    // Sort by priority
     tips.sort((a, b) => a.priority.index.compareTo(b.priority.index));
 
     debugPrint('[Recommendations] Generated ${tips.length} tips, score=$overallScore');
@@ -178,8 +161,6 @@ class RecommendationService {
     );
   }
 }
-
-// ─── Data classes ─────────────────────────────────────────────────────────────
 
 enum HealthScore { good, fair, needsAttention }
 

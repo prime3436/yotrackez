@@ -5,8 +5,6 @@ import '../services/meal_db_service.dart';
 import '../services/step_counter_service.dart';
 import '../theme/app_theme.dart';
 
-/// Floating Mini Avatar Dock displayed persistently at the bottom of the app.
-/// Shows animated walking/idle avatar, live avatar state, net calories, and steps.
 class PersistentAvatarDock extends StatefulWidget {
   final VoidCallback onTap;
 
@@ -32,7 +30,7 @@ class _PersistentAvatarDockState extends State<PersistentAvatarDock>
   @override
   void initState() {
     super.initState();
-    // Continuous idle/walking animation loop
+
     _walkController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -109,7 +107,7 @@ class _PersistentAvatarDockState extends State<PersistentAvatarDock>
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                // Animated Bobbing Mini Avatar
+
                 AnimatedBuilder(
                   animation: _bounceAnimation,
                   builder: (context, child) {
@@ -151,7 +149,6 @@ class _PersistentAvatarDockState extends State<PersistentAvatarDock>
 
                 const SizedBox(width: 12),
 
-                // Avatar State Name & Net Calories
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -201,7 +198,6 @@ class _PersistentAvatarDockState extends State<PersistentAvatarDock>
                   ),
                 ),
 
-                // Open Avatar Indicator Button
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(

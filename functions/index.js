@@ -7,7 +7,7 @@ exports.analyzeFood = onRequest(
     secrets: ["GEMINI_API_KEY"],
   },
   async (req, res) => {
-    // Handle CORS preflight
+
     if (req.method === "OPTIONS") {
       res.set("Access-Control-Allow-Origin", "*");
       res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -20,7 +20,7 @@ exports.analyzeFood = onRequest(
     }
 
     try {
-      // Retrieve server secret or fallback env variable
+
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
         logger.error("GEMINI_API_KEY secret missing on server");
@@ -47,3 +47,4 @@ exports.analyzeFood = onRequest(
     }
   }
 );
+
